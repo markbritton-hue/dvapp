@@ -1309,6 +1309,18 @@
       utter.pitch  = 1;
       utter.volume = 1;
 
+      // Pick a male voice — prefer deep/named males, fall back gracefully
+      const voices = speechSynthesis.getVoices();
+      const malePrefs = ['Google UK English Male','Microsoft David','Microsoft Guy','David','Thomas','Daniel','Alex','Fred','Ralph'];
+      let maleVoice = null;
+      for(const name of malePrefs){
+        maleVoice = voices.find(v => v.name === name);
+        if(maleVoice) break;
+      }
+      // Fallback: any voice with 'male' in the name
+      if(!maleVoice) maleVoice = voices.find(v => /male/i.test(v.name) && !/female/i.test(v.name));
+      if(maleVoice) utter.voice = maleVoice;
+
       utter.onstart = () => {
         window._ttsPlaying = true;
         icon.className  = 'fa-solid fa-stop';
