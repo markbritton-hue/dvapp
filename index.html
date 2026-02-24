@@ -1324,20 +1324,7 @@
         btn.style.color = 'rgba(167,139,250,0.7)';
       };
 
-      // Load voices reliably (Chrome loads them async)
-      const loadVoices = () => new Promise(resolve => {
-        const v = speechSynthesis.getVoices();
-        if(v.length){ resolve(v); return; }
-        const id = setTimeout(()=>resolve(speechSynthesis.getVoices()), 1000);
-        speechSynthesis.onvoiceschanged = () => { clearTimeout(id); speechSynthesis.onvoiceschanged=null; resolve(speechSynthesis.getVoices()); };
-      });
-      loadVoices().then(voices => {
-        console.log('Available voices:', voices.map(v=>v.name));
-        const zira = voices.find(v => /zira/i.test(v.name));
-        if(zira){ console.log('Using voice:', zira.name); utter.voice = zira; }
-        else { console.warn('Zira not found, using default'); }
-        speechSynthesis.speak(utter);
-      });
+      speechSynthesis.speak(utter);
     }
   </script>
 </body>
