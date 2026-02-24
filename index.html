@@ -739,10 +739,15 @@
         'https://corsproxy.io/?'+cal.url,
         'https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(cal.url)
       ];
-      for(const u of proxies){
-        try{const r=await fetch(u,{signal:AbortSignal.timeout(12000)});const t=await r.text();if(t.includes('BEGIN:VCALENDAR'))return parseIcal(t,cal.color);}catch{}
-      }
-      return {};
+      const tryProxy = async (u) => {
+        const r=await fetch(u,{signal:AbortSignal.timeout(8000)});
+        const t=await r.text();
+        if(!t.includes('BEGIN:VCALENDAR')) throw new Error('not ical');
+        return parseIcal(t,cal.color);
+      };
+      try{
+        return await Promise.any(proxies.map(tryProxy));
+      }catch{ return {}; }
     }
 
     async function fetchGcalEvents(){
