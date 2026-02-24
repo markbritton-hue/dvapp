@@ -275,19 +275,21 @@
     .btn-spotify { display:inline-flex;align-items:center;gap:8px;background:#1ed760;color:#000;border:none;
       border-radius:20px;padding:10px 22px;font-size:0.85rem;font-weight:700;cursor:pointer;transition:transform 0.15s,opacity 0.15s; }
     .btn-spotify:hover { opacity:0.88;transform:scale(1.03); }
-    .podcast-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-top:4px; }
-    .podcast-card { background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:12px;
-      overflow:hidden;transition:transform 0.15s,background 0.15s;text-decoration:none;display:block; }
-    .podcast-card:hover { background:rgba(255,255,255,0.08);transform:translateY(-2px); }
-    .podcast-cover { width:100%;aspect-ratio:1;object-fit:cover;display:block; }
-    .podcast-cover-placeholder { width:100%;aspect-ratio:1;background:rgba(30,215,96,0.08);
-      display:flex;align-items:center;justify-content:center;color:rgba(30,215,96,0.3);font-size:2rem; }
-    .podcast-info { padding:10px 12px 12px; }
-    .podcast-show { font-size:0.78rem;font-weight:700;color:rgba(255,255,255,0.85);
-      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px; }
-    .podcast-ep { font-size:0.7rem;color:rgba(255,255,255,0.45);
-      display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.35; }
-    .podcast-date { font-size:0.65rem;color:rgba(30,215,96,0.55);margin-top:5px;font-weight:600; }
+    .podcast-grid { display:flex;flex-wrap:wrap;gap:8px;margin-top:4px; }
+    .podcast-card { background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:8px;
+      overflow:hidden;transition:transform 0.15s,background 0.15s;text-decoration:none;
+      display:flex;align-items:center;gap:8px;padding:6px 8px;width:calc(25% - 6px);min-width:180px; }
+    .podcast-card:hover { background:rgba(255,255,255,0.08);transform:translateY(-1px); }
+    .podcast-cover { width:38px;height:38px;object-fit:cover;border-radius:5px;flex-shrink:0; }
+    .podcast-cover-placeholder { width:38px;height:38px;background:rgba(30,215,96,0.08);border-radius:5px;
+      display:flex;align-items:center;justify-content:center;color:rgba(30,215,96,0.3);font-size:1rem;flex-shrink:0; }
+    .podcast-info { min-width:0;flex:1; }
+    .podcast-show { font-size:0.67rem;font-weight:700;color:rgba(255,255,255,0.85);
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+    .podcast-ep { font-size:0.62rem;color:rgba(255,255,255,0.42);
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px; }
+    .podcast-date { font-size:0.58rem;color:rgba(30,215,96,0.55);margin-top:2px;font-weight:600; }
+    .podcast-none { color:rgba(255,255,255,0.3);font-size:0.8rem;padding:8px 0; }
     .spotify-user { font-size:0.7rem;color:rgba(30,215,96,0.5);margin-left:auto;display:flex;align-items:center;gap:5px; }
 
     /* ═══════════════════════════════════════════
@@ -1167,17 +1169,23 @@
     }
     function renderPodcasts(items){
       const grid=document.getElementById('podcastGrid');
-      grid.innerHTML=items.map(({show,episode})=>{
-        const img=show.images?.[0]?.url;
-        const epTitle=episode?.name||'No episodes found';
-        const epDate=episode?.release_date?fmtSpDate(episode.release_date):'';
-        const url=episode?.external_urls?.spotify||show.external_urls?.spotify||'#';
+      const cutoff=new Date(); cutoff.setDate(cutoff.getDate()-2); cutoff.setHours(0,0,0,0);
+      const recent=items.filter(({episode})=>episode&&new Date(episode.release_date)>=cutoff);
+      if(!recent.length){
+        grid.innerHTML=`<div class="podcast-none"><i class="fa-solid fa-podcast" style="color:rgba(30,215,96,0.3);margin-right:6px;"></i>No new episodes in the last 2 days.</div>`;
+        spShow('podcastGrid');
+        return;
+      }
+      grid.innerHTML=recent.map(({show,episode})=>{
+        const img=show.images?.[1]?.url||show.images?.[0]?.url;
+        const epDate=episode.release_date?fmtSpDate(episode.release_date):'';
+        const url=episode.external_urls?.spotify||show.external_urls?.spotify||'#';
         return`<a class="podcast-card" href="${esc(url)}" target="_blank" rel="noopener">
           ${img?`<img class="podcast-cover" src="${esc(img)}" alt="${esc(show.name)}" loading="lazy">`
                :`<div class="podcast-cover-placeholder"><i class="fa-solid fa-podcast"></i></div>`}
           <div class="podcast-info">
             <div class="podcast-show">${esc(show.name)}</div>
-            <div class="podcast-ep">${esc(epTitle)}</div>
+            <div class="podcast-ep">${esc(episode.name)}</div>
             ${epDate?`<div class="podcast-date">${esc(epDate)}</div>`:''}
           </div>
         </a>`;
