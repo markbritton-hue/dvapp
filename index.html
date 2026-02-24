@@ -347,8 +347,51 @@
 
   <div class="main-container">
 
-    <!-- ── WEATHER + VERSE + SCHEDULE ── -->
+    <!-- ── SCHEDULE + VERSE + WEATHER ── -->
     <div class="row g-4">
+
+      <!-- DAILY SCHEDULE -->
+      <div class="col-lg-7 col-md-12">
+        <div class="card-panel sched-panel">
+          <div class="section-heading">
+            <i class="fa-solid fa-calendar-day"></i>
+            My Schedule
+            <span id="gcalStatus" class="sync-badge loading">
+              <i class="fa-solid fa-circle-notch fa-spin" style="font-size:0.65rem;"></i> Syncing…
+            </span>
+          </div>
+
+          <!-- Week strip -->
+          <div class="week-nav">
+            <button class="btn-cal-nav" onclick="changeWeek(-1)"><i class="fa-solid fa-chevron-left"></i></button>
+            <div class="week-strip" id="weekStrip"></div>
+            <button class="btn-cal-nav" onclick="changeWeek(1)"><i class="fa-solid fa-chevron-right"></i></button>
+          </div>
+          <div class="week-sub">
+            <span class="week-month-label" id="weekMonthLabel"></span>
+            <button class="btn-today" onclick="goToday()">Today</button>
+          </div>
+
+          <!-- Day events -->
+          <div class="day-schedule" id="daySchedule">
+            <div class="sched-loading"><i class="fa-solid fa-circle-notch fa-spin"></i> Syncing calendar…</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VERSE OF THE DAY -->
+      <div class="col-lg-3 col-md-6 col-12">
+        <div class="card-panel verse-panel h-100">
+          <div class="section-heading"><i class="fa-solid fa-book-bible"></i> Verse of the Day</div>
+          <div class="verse-icon"><i class="fa-solid fa-cross"></i></div>
+          <div id="verseContent">
+            <div class="verse-loading"><i class="fa-solid fa-circle-notch fa-spin"></i> Loading today's verse…</div>
+          </div>
+          <button class="btn-verse-refresh" onclick="loadVerse()">
+            <i class="fa-solid fa-rotate-right"></i> Refresh
+          </button>
+        </div>
+      </div>
 
       <!-- WEATHER (compact) -->
       <div class="col-lg-2 col-md-6 col-12">
@@ -377,49 +420,6 @@
           <span id="wxHumidity" style="display:none"></span>
           <span id="wxUV" style="display:none"></span>
           <div id="wxForecast" style="display:none"></div>
-        </div>
-      </div>
-
-      <!-- VERSE OF THE DAY -->
-      <div class="col-lg-3 col-md-6 col-12">
-        <div class="card-panel verse-panel h-100">
-          <div class="section-heading"><i class="fa-solid fa-book-bible"></i> Verse of the Day</div>
-          <div class="verse-icon"><i class="fa-solid fa-cross"></i></div>
-          <div id="verseContent">
-            <div class="verse-loading"><i class="fa-solid fa-circle-notch fa-spin"></i> Loading today's verse…</div>
-          </div>
-          <button class="btn-verse-refresh" onclick="loadVerse()">
-            <i class="fa-solid fa-rotate-right"></i> Refresh
-          </button>
-        </div>
-      </div>
-
-      <!-- DAILY SCHEDULE -->
-      <div class="col-lg-7 col-md-12">
-        <div class="card-panel sched-panel">
-          <div class="section-heading">
-            <i class="fa-solid fa-calendar-day"></i>
-            My Schedule
-            <span id="gcalStatus" class="sync-badge loading">
-              <i class="fa-solid fa-circle-notch fa-spin" style="font-size:0.65rem;"></i> Syncing…
-            </span>
-          </div>
-
-          <!-- Week strip -->
-          <div class="week-nav">
-            <button class="btn-cal-nav" onclick="changeWeek(-1)"><i class="fa-solid fa-chevron-left"></i></button>
-            <div class="week-strip" id="weekStrip"></div>
-            <button class="btn-cal-nav" onclick="changeWeek(1)"><i class="fa-solid fa-chevron-right"></i></button>
-          </div>
-          <div class="week-sub">
-            <span class="week-month-label" id="weekMonthLabel"></span>
-            <button class="btn-today" onclick="goToday()">Today</button>
-          </div>
-
-          <!-- Day events -->
-          <div class="day-schedule" id="daySchedule">
-            <div class="sched-loading"><i class="fa-solid fa-circle-notch fa-spin"></i> Syncing calendar…</div>
-          </div>
         </div>
       </div>
 
