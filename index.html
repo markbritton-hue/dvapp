@@ -1324,11 +1324,20 @@
         btn.style.color = 'rgba(167,139,250,0.7)';
       };
 
-      // Use David voice; voices may load async on first call
-      const pickDavid = () => speechSynthesis.getVoices().find(v => /david/i.test(v.name)) || null;
-      const doSpeak = () => { const v=pickDavid(); if(v) utter.voice=v; speechSynthesis.speak(utter); };
-      if(speechSynthesis.getVoices().length){ doSpeak(); }
-      else { speechSynthesis.onvoiceschanged = () => { speechSynthesis.onvoiceschanged=null; doSpeak(); }; }
+      // Load voices reliably (Chrome loads them async)
+      const loadVoices = () => new Promise(resolve => {
+        const v = speechSynthesis.getVoices();
+        if(v.length){ resolve(v); return; }
+        const id = setTimeout(()=>resolve(speechSynthesis.getVoices()), 1000);
+        speechSynthesis.onvoiceschanged = () => { clearTimeout(id); speechSynthesis.onvoiceschanged=null; resolve(speechSynthesis.getVoices()); };
+      });
+      loadVoices().then(voices => {
+        console.log('Available voices:', voices.map(v=>v.name));
+        const david = voices.find(v => /david/i.test(v.name));
+        if(david){ console.log('Using voice:', david.name); utter.voice = david; }
+        else { console.warn('David not found, using default'); }
+        speechSynthesis.speak(utter);
+      });
     }
   </script>
 </body>
