@@ -312,6 +312,23 @@
     .email-date { font-size:0.65rem;color:rgba(255,255,255,0.3); }
     .email-preview { font-size:0.7rem;color:rgba(255,255,255,0.38);margin-top:5px;
       display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.4; }
+    .email-item { cursor:pointer; }
+    /* Email modal */
+    .email-modal-bg { position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9000;
+      display:flex;align-items:center;justify-content:center;padding:20px; }
+    .email-modal { background:#1e293b;border:1px solid rgba(251,191,36,0.3);border-radius:16px;
+      width:100%;max-width:780px;max-height:85vh;display:flex;flex-direction:column;
+      box-shadow:0 24px 60px rgba(0,0,0,0.6); }
+    .email-modal-header { padding:18px 22px;border-bottom:1px solid rgba(255,255,255,0.07);
+      display:flex;align-items:flex-start;gap:12px; }
+    .email-modal-subject { font-size:1rem;font-weight:700;color:rgba(255,255,255,0.9);flex:1;line-height:1.3; }
+    .email-modal-close { background:none;border:none;color:rgba(255,255,255,0.4);font-size:1.2rem;
+      cursor:pointer;padding:0;flex-shrink:0;line-height:1; }
+    .email-modal-close:hover { color:rgba(255,255,255,0.8); }
+    .email-modal-meta { padding:8px 22px;font-size:0.72rem;color:rgba(251,191,36,0.6);
+      border-bottom:1px solid rgba(255,255,255,0.05);display:flex;gap:16px;flex-wrap:wrap; }
+    .email-modal-body { flex:1;overflow-y:auto;padding:18px 22px; }
+    .email-modal-body iframe { width:100%;border:none;background:#fff;border-radius:8px;min-height:400px; }
 
     .news-panel { border: 1px solid rgba(220,38,38,0.25); height: auto; }
     .news-panel .section-heading { color: #f87171; }
@@ -566,6 +583,18 @@
 
   <!-- TOAST -->
   <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Email modal -->
+  <div id="emailModal" class="email-modal-bg" style="display:none;" onclick="if(event.target===this)closeEmailModal()">
+    <div class="email-modal">
+      <div class="email-modal-header">
+        <div class="email-modal-subject" id="emailModalSubject"></div>
+        <button class="email-modal-close" onclick="closeEmailModal()">✕</button>
+      </div>
+      <div class="email-modal-meta" id="emailModalMeta"></div>
+      <div class="email-modal-body" id="emailModalBody"></div>
+    </div>
+  </div>
 
   <script>
     // ─────────────────────────────────────────────
@@ -1290,6 +1319,30 @@
     // ─────────────────────────────────────────────
     const EMAIL_FEED = 'https://kill-the-newsletter.com/feeds/py56do0gbug3d4vwsne9.xml';
 
+    function openEmailModal(subject, from, date, html){
+      document.getElementById('emailModalSubject').textContent=subject;
+      document.getElementById('emailModalMeta').innerHTML=
+        `${from?`<span><i class="fa-solid fa-user" style="font-size:0.6rem;margin-right:4px;"></i>${esc(from)}</span>`:''}
+         ${date?`<span><i class="fa-regular fa-clock" style="font-size:0.6rem;margin-right:4px;"></i>${esc(date)}</span>`:''}`;
+      const body=document.getElementById('emailModalBody');
+      // Render HTML content in a sandboxed iframe
+      const iframe=document.createElement('iframe');
+      iframe.sandbox='allow-same-origin allow-popups';
+      iframe.style.cssText='width:100%;border:none;background:#fff;border-radius:8px;min-height:420px;';
+      body.innerHTML='';
+      body.appendChild(iframe);
+      const doc=iframe.contentDocument||iframe.contentWindow.document;
+      doc.open(); doc.write(`<base target="_blank">${html}`); doc.close();
+      // Auto-size iframe to content
+      setTimeout(()=>{ try{ iframe.style.height=doc.body.scrollHeight+32+'px'; }catch{} },300);
+      document.getElementById('emailModal').style.display='flex';
+      document.body.style.overflow='hidden';
+    }
+    function closeEmailModal(){
+      document.getElementById('emailModal').style.display='none';
+      document.body.style.overflow='';
+    }
+
     async function fetchEmails(){
       document.getElementById('emailLoading').style.display='flex';
       document.getElementById('emailList').style.display='none';
@@ -1316,13 +1369,13 @@
       const entries=[...xml.querySelectorAll('entry,item')];
       if(!entries.length){document.getElementById('emailEmpty').style.display='block';return;}
       const list=document.getElementById('emailList');
-      list.innerHTML=entries.slice(0,10).map(e=>{
+      list.innerHTML=entries.slice(0,10).map((e,i)=>{
         const subject=(e.querySelector('title')?.textContent||'(no subject)').trim();
         const from=(e.querySelector('author name,author')?.textContent||'').trim();
         const dateRaw=e.querySelector('published,updated,pubDate')?.textContent||'';
         const date=dateRaw?new Date(dateRaw).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'}):'';
         const content=(e.querySelector('content,summary,description')?.textContent||'').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim().slice(0,150);
-        return`<div class="email-item">
+        return`<div class="email-item" onclick="openEmailModal(emailEntries[${i}].subject,emailEntries[${i}].from,emailEntries[${i}].date,emailEntries[${i}].html)">
           <div class="email-subject">${esc(subject)}</div>
           <div class="email-meta">
             ${from?`<span class="email-from"><i class="fa-solid fa-user" style="font-size:0.6rem;margin-right:3px;"></i>${esc(from)}</span>`:''}
@@ -1331,6 +1384,14 @@
           ${content?`<div class="email-preview">${esc(content)}</div>`:''}
         </div>`;
       }).join('');
+      // Store full data for modal
+      window.emailEntries=entries.slice(0,10).map(e=>({
+        subject:(e.querySelector('title')?.textContent||'(no subject)').trim(),
+        from:(e.querySelector('author name,author')?.textContent||'').trim(),
+        dateRaw:e.querySelector('published,updated,pubDate')?.textContent||'',
+        get date(){ return this.dateRaw?new Date(this.dateRaw).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'}):''  },
+        html:e.querySelector('content,summary,description')?.textContent||'(empty)'
+      }));
       list.style.display='flex';
     }
     fetchEmails();
