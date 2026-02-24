@@ -1333,9 +1333,9 @@
       });
       loadVoices().then(voices => {
         console.log('Available voices:', voices.map(v=>v.name));
-        const alex = voices.find(v => /alex/i.test(v.name));
-        if(alex){ console.log('Using voice:', alex.name); utter.voice = alex; }
-        else { console.warn('Alex not found, using default'); }
+        const zira = voices.find(v => /zira/i.test(v.name));
+        if(zira){ console.log('Using voice:', zira.name); utter.voice = zira; }
+        else { console.warn('Zira not found, using default'); }
         speechSynthesis.speak(utter);
       });
     }
