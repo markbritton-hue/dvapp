@@ -796,6 +796,7 @@
     function renderWeekStrip() {
       const days = getWeekDays();
       const strip = document.getElementById('weekStrip');
+      if (!strip) return;
 
       strip.innerHTML = days.map(d => {
         const key       = toDateKey(d);
@@ -818,7 +819,7 @@
       const lbl = first.getMonth() === last.getMonth()
         ? `${MONTH_NAMES[first.getMonth()]} ${first.getFullYear()}`
         : `${MONTH_NAMES[first.getMonth()].slice(0,3)} – ${MONTH_NAMES[last.getMonth()].slice(0,3)} ${last.getFullYear()}`;
-      document.getElementById('weekMonthLabel').textContent = lbl;
+      const lbl_el = document.getElementById('weekMonthLabel'); if(lbl_el) lbl_el.textContent = lbl;
     }
 
     function changeWeek(delta) {
@@ -1016,7 +1017,14 @@
       document.getElementById('newsUpdated').style.display='none';
       const proxies=['https://api.allorigins.win/raw?url='+encodeURIComponent(NEWS_RSS_URL),'https://corsproxy.io/?'+NEWS_RSS_URL,'https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(NEWS_RSS_URL)];
       let text=null;
-      for(const url of proxies){try{const r=await fetch(url,{signal:AbortSignal.timeout(12000)});const t=await r.text();if(t.includes('<rss')||t.includes('<channel')){text=t;break;}}catch{}}
+      try{
+        text=await Promise.any(proxies.map(async u=>{
+          const r=await fetch(u,{signal:AbortSignal.timeout(8000)});
+          const t=await r.text();
+          if(!t.includes('<rss')&&!t.includes('<channel'))throw new Error('not rss');
+          return t;
+        }));
+      }catch{}
       document.getElementById('newsLoading').style.display='none';
       if(!text){document.getElementById('newsError').style.display='flex';return;}
       allNewsItems=parseRssFeed(text); visibleNews=9;
