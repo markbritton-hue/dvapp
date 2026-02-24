@@ -369,6 +369,15 @@
         <span class="navbar-brand-text">Daily View</span>
       </div>
       <span class="navbar-date" id="navDate"></span>
+      <button id="readAloudBtn" onclick="toggleReadAloud()" title="Read today aloud"
+        style="background:none;border:1px solid rgba(139,92,246,0.3);color:rgba(167,139,250,0.7);
+               border-radius:20px;padding:5px 14px;font-size:0.78rem;font-weight:600;cursor:pointer;
+               display:flex;align-items:center;gap:6px;transition:all 0.2s;"
+        onmouseover="this.style.background='rgba(139,92,246,0.12)';this.style.color='#a78bfa'"
+        onmouseout="if(!window._ttsPlaying){this.style.background='none';this.style.color='rgba(167,139,250,0.7)'}">
+        <i id="readAloudIcon" class="fa-solid fa-volume-high"></i>
+        <span id="readAloudLabel">Read Aloud</span>
+      </button>
     </div>
   </nav>
 
@@ -1231,6 +1240,83 @@
 
     fetchNews();
     setInterval(fetchNews, 20*60*1000);
+
+    // ─────────────────────────────────────────────
+    //  READ ALOUD
+    // ─────────────────────────────────────────────
+    window._ttsPlaying = false;
+
+    function buildReadAloudScript() {
+      const parts = [];
+
+      // Date
+      const dateStr = new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+      parts.push(`Good day. Today is ${dateStr}.`);
+
+      // Verse
+      const verseEl = document.getElementById('verseContent');
+      const verseText = verseEl?.querySelector('.verse-text')?.textContent?.replace(/["""]/g,'').trim();
+      const verseRef  = verseEl?.querySelector('.verse-reference')?.textContent?.trim();
+      if(verseText && verseRef) {
+        parts.push(`Your verse of the day. ${verseRef}. ${verseText}`);
+      }
+
+      // Schedule
+      const events = gcalEvents[TODAY_KEY] || [];
+      if(!events.length) {
+        parts.push(`You have no events scheduled for today.`);
+      } else {
+        parts.push(`You have ${events.length} event${events.length>1?'s':''} today.`);
+        events.forEach(e => {
+          if(e.allDay) {
+            parts.push(`All day: ${e.title}.${e.notes?' '+e.notes:''}`);
+          } else {
+            parts.push(`At ${e.start}${e.end?' until '+e.end:''}: ${e.title}.${e.notes?' '+e.notes:''}`);
+          }
+        });
+      }
+
+      return parts.join('  ');
+    }
+
+    function toggleReadAloud() {
+      const btn   = document.getElementById('readAloudBtn');
+      const icon  = document.getElementById('readAloudIcon');
+      const label = document.getElementById('readAloudLabel');
+
+      if(window._ttsPlaying) {
+        speechSynthesis.cancel();
+        window._ttsPlaying = false;
+        icon.className  = 'fa-solid fa-volume-high';
+        label.textContent = 'Read Aloud';
+        btn.style.background = 'none';
+        btn.style.color = 'rgba(167,139,250,0.7)';
+        return;
+      }
+
+      const script = buildReadAloudScript();
+      const utter  = new SpeechSynthesisUtterance(script);
+      utter.rate   = 0.95;
+      utter.pitch  = 1;
+      utter.volume = 1;
+
+      utter.onstart = () => {
+        window._ttsPlaying = true;
+        icon.className  = 'fa-solid fa-stop';
+        label.textContent = 'Stop';
+        btn.style.background = 'rgba(139,92,246,0.15)';
+        btn.style.color = '#a78bfa';
+      };
+      utter.onend = utter.onerror = () => {
+        window._ttsPlaying = false;
+        icon.className  = 'fa-solid fa-volume-high';
+        label.textContent = 'Read Aloud';
+        btn.style.background = 'none';
+        btn.style.color = 'rgba(167,139,250,0.7)';
+      };
+
+      speechSynthesis.speak(utter);
+    }
   </script>
 </body>
 </html>
