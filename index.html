@@ -1324,6 +1324,12 @@
         btn.style.color = 'rgba(167,139,250,0.7)';
       };
 
+      // Pick best available voice
+      const voices = speechSynthesis.getVoices();
+      const prefs = ['Google UK English Male','Microsoft David','Microsoft Guy','Microsoft Mark','Mark','David','Thomas','Daniel','Alex','Fred','Ralph','Jasper'];
+      let pick = null;
+      for(const name of prefs){ pick = voices.find(v => v.name.startsWith(name)); if(pick) break; }
+      if(pick) utter.voice = pick;
       speechSynthesis.speak(utter);
     }
   </script>
