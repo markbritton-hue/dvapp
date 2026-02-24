@@ -295,6 +295,24 @@
     /* ═══════════════════════════════════════════
        NEWS FEED
     ═══════════════════════════════════════════ */
+    /* ═══════════════════════════════════════════
+       IMPORTANT EMAILS
+    ═══════════════════════════════════════════ */
+    .email-panel { border: 1px solid rgba(251,191,36,0.25); }
+    .email-panel .section-heading { color: #fbbf24; }
+    .email-list { display:flex;flex-direction:column;gap:8px;margin-top:4px; }
+    .email-item { background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);
+      border-left:3px solid rgba(251,191,36,0.5);border-radius:8px;padding:10px 14px;
+      transition:background 0.15s; }
+    .email-item:hover { background:rgba(255,255,255,0.07); }
+    .email-subject { font-size:0.82rem;font-weight:700;color:rgba(255,255,255,0.88);
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+    .email-meta { display:flex;gap:10px;margin-top:3px;align-items:center;flex-wrap:wrap; }
+    .email-from { font-size:0.68rem;color:#fbbf24;opacity:0.7;font-weight:600; }
+    .email-date { font-size:0.65rem;color:rgba(255,255,255,0.3); }
+    .email-preview { font-size:0.7rem;color:rgba(255,255,255,0.38);margin-top:5px;
+      display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.4; }
+
     .news-panel { border: 1px solid rgba(220,38,38,0.25); height: auto; }
     .news-panel .section-heading { color: #f87171; }
 
@@ -477,6 +495,35 @@
             <span onclick="initSpotify()" style="cursor:pointer;color:#1ed760;text-decoration:underline;margin-left:4px;">Retry</span>
           </div>
           <div id="podcastGrid" class="podcast-grid" style="display:none;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── IMPORTANT EMAILS ── -->
+    <div class="row g-4 mt-0">
+      <div class="col-12">
+        <div class="card-panel email-panel">
+          <div class="section-heading">
+            <i class="fa-solid fa-envelope"></i>
+            Important Emails
+            <button onclick="fetchEmails()" title="Refresh"
+              style="margin-left:auto;background:none;border:1px solid rgba(251,191,36,0.25);color:rgba(251,191,36,0.6);
+                     font-size:0.72rem;padding:3px 10px;border-radius:12px;cursor:pointer;
+                     display:flex;align-items:center;gap:5px;font-weight:600;transition:all 0.2s;"
+              onmouseover="this.style.background='rgba(251,191,36,0.1)';this.style.color='#fbbf24'"
+              onmouseout="this.style.background='none';this.style.color='rgba(251,191,36,0.6)'">
+              <i class="fa-solid fa-rotate-right" style="font-size:0.65rem;"></i> Refresh
+            </button>
+          </div>
+          <div id="emailLoading" class="news-state"><i class="fa-solid fa-circle-notch fa-spin"></i> Loading emails…</div>
+          <div id="emailError" class="news-state error" style="display:none;">
+            <i class="fa-solid fa-triangle-exclamation"></i> Could not load emails.
+            <span onclick="fetchEmails()" style="cursor:pointer;color:#fbbf24;text-decoration:underline;margin-left:4px;">Retry</span>
+          </div>
+          <div id="emailList" class="email-list" style="display:none;"></div>
+          <div id="emailEmpty" style="display:none;color:rgba(255,255,255,0.3);font-size:0.8rem;padding:8px 0;">
+            <i class="fa-solid fa-inbox" style="margin-right:6px;color:rgba(251,191,36,0.3);"></i>No important emails yet.
+          </div>
         </div>
       </div>
     </div>
@@ -1237,6 +1284,57 @@
       spShow('spotifyLogin');
     }
     initSpotify();
+
+    // ─────────────────────────────────────────────
+    //  IMPORTANT EMAILS (Kill the Newsletter feed)
+    // ─────────────────────────────────────────────
+    const EMAIL_FEED = 'https://kill-the-newsletter.com/feeds/py56do0gbug3d4vwsne9.xml';
+
+    async function fetchEmails(){
+      document.getElementById('emailLoading').style.display='flex';
+      document.getElementById('emailList').style.display='none';
+      document.getElementById('emailError').style.display='none';
+      document.getElementById('emailEmpty').style.display='none';
+      const proxies=[
+        'https://api.allorigins.win/raw?url='+encodeURIComponent(EMAIL_FEED),
+        'https://corsproxy.io/?'+EMAIL_FEED,
+        'https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(EMAIL_FEED)
+      ];
+      let text=null;
+      try{
+        text=await Promise.any(proxies.map(async u=>{
+          const r=await fetch(u,{signal:AbortSignal.timeout(8000)});
+          const t=await r.text();
+          if(!t.includes('<feed')&&!t.includes('<rss')&&!t.includes('<entry'))throw new Error('not feed');
+          return t;
+        }));
+      }catch{}
+      document.getElementById('emailLoading').style.display='none';
+      if(!text){document.getElementById('emailError').style.display='flex';return;}
+      const parser=new DOMParser();
+      const xml=parser.parseFromString(text,'text/xml');
+      const entries=[...xml.querySelectorAll('entry,item')];
+      if(!entries.length){document.getElementById('emailEmpty').style.display='block';return;}
+      const list=document.getElementById('emailList');
+      list.innerHTML=entries.slice(0,10).map(e=>{
+        const subject=(e.querySelector('title')?.textContent||'(no subject)').trim();
+        const from=(e.querySelector('author name,author')?.textContent||'').trim();
+        const dateRaw=e.querySelector('published,updated,pubDate')?.textContent||'';
+        const date=dateRaw?new Date(dateRaw).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'}):'';
+        const content=(e.querySelector('content,summary,description')?.textContent||'').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim().slice(0,150);
+        return`<div class="email-item">
+          <div class="email-subject">${esc(subject)}</div>
+          <div class="email-meta">
+            ${from?`<span class="email-from"><i class="fa-solid fa-user" style="font-size:0.6rem;margin-right:3px;"></i>${esc(from)}</span>`:''}
+            ${date?`<span class="email-date">${esc(date)}</span>`:''}
+          </div>
+          ${content?`<div class="email-preview">${esc(content)}</div>`:''}
+        </div>`;
+      }).join('');
+      list.style.display='flex';
+    }
+    fetchEmails();
+    setInterval(fetchEmails, 10*60*1000);
 
     fetchNews();
     setInterval(fetchNews, 20*60*1000);
