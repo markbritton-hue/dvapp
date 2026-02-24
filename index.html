@@ -1365,9 +1365,19 @@
       document.getElementById('emailLoading').style.display='none';
       if(!text){document.getElementById('emailError').style.display='flex';return;}
       const parser=new DOMParser();
-      const xml=parser.parseFromString(text,'text/xml');
-      const entries=[...xml.querySelectorAll('entry,item')];
-      if(!entries.length){document.getElementById('emailEmpty').style.display='block';return;}
+      const xml=parser.parseFromString(text,'application/xml');
+      // Atom feeds use namespaces — query both with and without prefix
+      const entries=[...xml.getElementsByTagNameNS('*','entry'),...xml.querySelectorAll('entry,item')]
+        .filter((e,i,a)=>a.indexOf(e)===i); // dedupe
+      console.log('Email feed entries found:', entries.length, xml);
+      if(!entries.length){
+        document.getElementById('emailEmpty').innerHTML=
+          `<i class="fa-solid fa-inbox" style="margin-right:6px;color:rgba(251,191,36,0.3);"></i>
+           No emails yet. <a href="https://kill-the-newsletter.com/feeds/py56do0gbug3d4vwsne9.xml" target="_blank"
+           style="color:#fbbf24;text-decoration:underline;font-size:0.75rem;margin-left:6px;">View raw feed</a>`;
+        document.getElementById('emailEmpty').style.display='block';
+        return;
+      }
       const list=document.getElementById('emailList');
       list.innerHTML=entries.slice(0,10).map((e,i)=>{
         const subject=(e.querySelector('title')?.textContent||'(no subject)').trim();
@@ -1390,7 +1400,7 @@
         from:(e.querySelector('author name,author')?.textContent||'').trim(),
         dateRaw:e.querySelector('published,updated,pubDate')?.textContent||'',
         get date(){ return this.dateRaw?new Date(this.dateRaw).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'}):''  },
-        html:e.querySelector('content,summary,description')?.textContent||'(empty)'
+        html:(e.getElementsByTagNameNS('*','content')[0]||e.querySelector('content,summary,description'))?.textContent||'(empty)'
       }));
       list.style.display='flex';
     }
