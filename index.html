@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Daily View</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      min-height: 100vh;
+      color: rgba(255,255,255,0.9);
+    }
+
+    /* ── NAVBAR ── */
+    .navbar-custom {
+      background: rgba(15,23,42,0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(96,165,250,0.15);
+      padding: 14px 0;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .navbar-brand-text {
+      font-size: 1.5rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #60a5fa, #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -0.5px;
+    }
+    .navbar-date {
+      font-size: 0.85rem;
+      color: rgba(255,255,255,0.5);
+      font-weight: 500;
+    }
+
+    /* ── MAIN LAYOUT ── */
+    .main-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 36px 20px 60px;
+    }
+
+    /* ── SECTION HEADINGS ── */
+    .section-heading {
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* ── CARD PANEL (base) ── */
+    .card-panel {
+      background: rgba(30,41,59,0.8);
+      border-radius: 16px;
+      padding: 28px 30px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+      height: 100%;
+    }
+
+    /* ═══════════════════════════════════════════
+       WEATHER CARD
+    ═══════════════════════════════════════════ */
+    .weather-panel { border: 1px solid rgba(6,182,212,0.25); height: auto; }
+    .weather-panel .section-heading { color: #06b6d4; }
+
+    .weather-state {
+      display: flex; align-items: center; gap: 10px;
+      color: rgba(255,255,255,0.4); font-size: 0.88rem;
+      padding: 4px 0; min-height: 56px;
+    }
+    .weather-state.error { color: rgba(239,68,68,0.7); }
+
+    .weather-layout { display: flex; align-items: center; gap: 0; flex-wrap: wrap; }
+
+    .weather-now {
+      display: flex; align-items: center; gap: 16px;
+      padding-right: 28px; flex-shrink: 0;
+    }
+    .weather-icon-bg {
+      width: 66px; height: 66px; border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.9rem; flex-shrink: 0; background: rgba(6,182,212,0.1);
+    }
+    .weather-temp {
+      font-size: 2.6rem; font-weight: 800; line-height: 1;
+      background: linear-gradient(135deg, #06b6d4, #60a5fa);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .weather-cond { font-size: 0.9rem; font-weight: 600; color: rgba(255,255,255,0.75); margin-top: 5px; }
+    .weather-loc {
+      font-size: 0.75rem; color: rgba(255,255,255,0.38); margin-top: 3px;
+      display: flex; align-items: center; gap: 4px;
+    }
+    .wx-divider { width: 1px; align-self: stretch; min-height: 60px; background: rgba(255,255,255,0.07); flex-shrink: 0; }
+
+    .weather-details { display: flex; gap: 20px; padding: 0 28px; flex-shrink: 0; flex-wrap: wrap; }
+    .weather-detail { display: flex; align-items: center; gap: 10px; }
+    .weather-detail > i { font-size: 1.05rem; }
+    .wd-val { font-size: 1rem; font-weight: 700; color: rgba(255,255,255,0.88); line-height: 1; }
+    .wd-lbl { font-size: 0.67rem; font-weight: 600; color: rgba(255,255,255,0.32); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+
+    .weather-forecast { display: flex; gap: 10px; flex: 1; min-width: 0; justify-content: flex-end; padding-left: 28px; flex-wrap: wrap; }
+    .fc-day { display: flex; flex-direction: column; align-items: center; gap: 5px; min-width: 42px; }
+    .fc-dow { font-size: 0.65rem; font-weight: 700; color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 0.4px; }
+    .fc-dow.is-today { color: #06b6d4; }
+    .fc-icon { font-size: 1.05rem; }
+    .fc-hi { font-size: 0.8rem; font-weight: 700; color: rgba(255,255,255,0.82); }
+    .fc-lo { font-size: 0.72rem; color: rgba(255,255,255,0.32); }
+    .weather-updated { font-size: 0.68rem; color: rgba(255,255,255,0.2); margin-top: 14px; display: flex; align-items: center; gap: 5px; }
+
+    /* ═══════════════════════════════════════════
+       BIBLE VERSE CARD
+    ═══════════════════════════════════════════ */
+    .verse-panel { border: 1px solid rgba(96,165,250,0.25); }
+    .verse-panel .section-heading { color: #60a5fa; }
+    .verse-icon {
+      width: 48px; height: 48px; background: rgba(96,165,250,0.12); border-radius: 12px;
+      display: flex; align-items: center; justify-content: center; margin-bottom: 18px; font-size: 1.3rem; color: #60a5fa;
+    }
+    .verse-text { font-size: 1.15rem; font-weight: 400; line-height: 1.75; color: rgba(255,255,255,0.88); font-style: italic; margin-bottom: 14px; }
+    .verse-reference { font-size: 0.88rem; font-weight: 700; color: #60a5fa; letter-spacing: 0.3px; }
+    .verse-translation { font-size: 0.73rem; color: rgba(255,255,255,0.32); margin-top: 4px; font-style: normal; }
+    .verse-loading { display: flex; align-items: center; gap: 10px; color: rgba(255,255,255,0.45); font-size: 0.9rem; min-height: 80px; }
+    .btn-verse-refresh {
+      background: none; border: 1px solid rgba(96,165,250,0.3); color: rgba(96,165,250,0.75);
+      font-size: 0.8rem; font-weight: 600; padding: 6px 16px; border-radius: 20px;
+      cursor: pointer; transition: all 0.2s; margin-top: 18px; display: inline-flex; align-items: center; gap: 6px;
+    }
+    .btn-verse-refresh:hover { background: rgba(96,165,250,0.1); border-color: rgba(96,165,250,0.6); color: #60a5fa; }
+
+    /* ═══════════════════════════════════════════
+       SCHEDULE CARD
+    ═══════════════════════════════════════════ */
+    .sched-panel { border: 1px solid rgba(139,92,246,0.25); }
+    .sched-panel .section-heading { color: #a78bfa; }
+
+    .sync-badge {
+      margin-left: auto; display: flex; align-items: center; gap: 5px;
+      font-size: 0.7rem; font-weight: 600; letter-spacing: 0; text-transform: none; transition: all 0.2s;
+    }
+    .sync-badge.loading { color: rgba(255,255,255,0.35); }
+    .sync-badge.ok      { color: #10b981; }
+    .sync-badge.error   { color: #f59e0b; cursor: pointer; }
+    .sync-badge.error:hover { color: #fbbf24; }
+
+    /* ── Week strip ── */
+    .week-nav {
+      display: flex; align-items: center; gap: 8px; margin-bottom: 6px;
+    }
+    .week-strip {
+      display: flex; gap: 3px; flex: 1; justify-content: space-between;
+    }
+    .week-day {
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      padding: 7px 4px; border-radius: 10px; cursor: pointer; transition: all 0.15s;
+      flex: 1; min-width: 0; border: 1px solid transparent;
+    }
+    .week-day:hover { background: rgba(139,92,246,0.15); }
+    .week-day.is-today .wd-num { color: #a78bfa; font-weight: 800; }
+    .week-day.is-today { background: rgba(139,92,246,0.12); border-color: rgba(139,92,246,0.3); }
+    .week-day.is-selected { background: rgba(96,165,250,0.2); border-color: rgba(96,165,250,0.5); }
+    .week-day.is-selected .wd-num { color: #60a5fa; font-weight: 800; }
+    .wd-dow { font-size: 0.62rem; font-weight: 700; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 0.4px; }
+    .wd-num { font-size: 0.88rem; font-weight: 600; color: rgba(255,255,255,0.72); line-height: 1; }
+    .wd-pip { width: 4px; height: 4px; border-radius: 50%; }
+
+    .btn-cal-nav {
+      background: rgba(139,92,246,0.12); border: 1px solid rgba(139,92,246,0.25);
+      color: #a78bfa; width: 30px; height: 30px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all 0.2s; font-size: 0.82rem; flex-shrink: 0;
+    }
+    .btn-cal-nav:hover { background: rgba(139,92,246,0.25); border-color: rgba(139,92,246,0.5); }
+
+    .week-sub {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 16px; margin-top: 4px;
+    }
+    .week-month-label {
+      font-size: 0.75rem; color: rgba(255,255,255,0.3); font-weight: 600;
+    }
+    .btn-today {
+      background: none; border: 1px solid rgba(139,92,246,0.28); color: rgba(167,139,250,0.7);
+      font-size: 0.72rem; font-weight: 700; padding: 3px 12px; border-radius: 12px;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .btn-today:hover { background: rgba(139,92,246,0.15); border-color: rgba(139,92,246,0.5); color: #a78bfa; }
+
+    /* ── Day schedule ── */
+    .day-schedule { max-height: 820px; overflow-y: auto; padding-right: 4px; }
+    .day-schedule::-webkit-scrollbar { width: 4px; }
+    .day-schedule::-webkit-scrollbar-track { background: transparent; }
+    .day-schedule::-webkit-scrollbar-thumb { background: rgba(139,92,246,0.3); border-radius: 4px; }
+
+    .day-header {
+      font-size: 1rem; font-weight: 800;
+      background: linear-gradient(135deg, #a78bfa, #60a5fa);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      margin-bottom: 16px; padding-bottom: 12px;
+      border-bottom: 1px solid rgba(139,92,246,0.15);
+    }
+
+    .allday-section { margin-bottom: 14px; }
+    .allday-label {
+      font-size: 0.63rem; font-weight: 700; color: rgba(255,255,255,0.28);
+      text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px;
+    }
+    .allday-chip {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 6px 12px; border-radius: 8px; margin-bottom: 5px; margin-right: 5px;
+      background: rgba(66,133,244,0.1); border: 1px solid rgba(66,133,244,0.2);
+      font-size: 0.82rem; font-weight: 600; color: rgba(255,255,255,0.82);
+    }
+    .allday-dot { width: 7px; height: 7px; border-radius: 50%; background: #4285f4; flex-shrink: 0; }
+
+    .sched-event {
+      display: flex; gap: 12px; margin-bottom: 10px; align-items: stretch;
+    }
+    .sched-time {
+      width: 68px; flex-shrink: 0; text-align: right; padding-top: 2px;
+    }
+    .sched-time-start { font-size: 0.76rem; font-weight: 700; color: rgba(255,255,255,0.55); line-height: 1.2; }
+    .sched-time-end   { font-size: 0.67rem; color: rgba(255,255,255,0.28); margin-top: 2px; }
+
+    .sched-bar { width: 3px; border-radius: 3px; flex-shrink: 0; min-height: 40px; }
+
+    .sched-details {
+      flex: 1; min-width: 0;
+      background: rgba(15,23,42,0.4); border: 1px solid rgba(139,92,246,0.1);
+      border-radius: 10px; padding: 9px 12px;
+      transition: border-color 0.15s;
+    }
+    .sched-event:hover .sched-details { border-color: rgba(139,92,246,0.3); }
+    .sched-title { font-size: 0.87rem; font-weight: 700; color: rgba(255,255,255,0.9); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sched-sub   { font-size: 0.72rem; color: rgba(255,255,255,0.36); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* Current time indicator */
+    .now-line {
+      display: flex; align-items: center; gap: 8px;
+      margin: 8px 0; color: #ef4444;
+    }
+    .now-dot  { width: 8px; height: 8px; border-radius: 50%; background: #ef4444; flex-shrink: 0; margin-left: 80px; }
+    .now-text { font-size: 0.68rem; font-weight: 700; color: #ef4444; white-space: nowrap; }
+    .now-rule { flex: 1; height: 1px; background: rgba(239,68,68,0.35); }
+
+    .no-sched-msg {
+      text-align: center; color: rgba(255,255,255,0.22);
+      font-size: 0.85rem; padding: 28px 0 16px;
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+    }
+    .sched-loading {
+      display: flex; align-items: center; gap: 10px;
+      color: rgba(255,255,255,0.38); font-size: 0.88rem; padding: 20px 0;
+    }
+
+    /* ═══════════════════════════════════════════
+       NEWS FEED
+    ═══════════════════════════════════════════ */
+    .news-panel { border: 1px solid rgba(220,38,38,0.25); height: auto; }
+    .news-panel .section-heading { color: #f87171; }
+
+    .news-state { display: flex; align-items: center; gap: 10px; color: rgba(255,255,255,0.4); font-size: 0.88rem; padding: 8px 0; min-height: 48px; }
+    .news-state.error { color: rgba(239,68,68,0.7); }
+
+    .news-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 14px; }
+
+    .news-card {
+      background: rgba(15,23,42,0.55); border: 1px solid rgba(220,38,38,0.12);
+      border-radius: 12px; overflow: hidden; display: flex; flex-direction: column;
+      cursor: pointer; transition: all 0.2s; text-decoration: none;
+    }
+    .news-card:hover { border-color: rgba(220,38,38,0.4); transform: translateY(-3px); box-shadow: 0 10px 24px rgba(0,0,0,0.45); }
+    .news-thumb { width: 100%; height: 155px; object-fit: cover; display: block; background: rgba(15,23,42,0.8); flex-shrink: 0; }
+    .news-body  { padding: 14px 16px 12px; flex: 1; display: flex; flex-direction: column; }
+    .news-cat   { font-size: 0.63rem; font-weight: 700; color: #f87171; text-transform: uppercase; letter-spacing: 0.9px; margin-bottom: 6px; }
+    .news-headline {
+      font-size: 0.88rem; font-weight: 700; color: rgba(255,255,255,0.9); line-height: 1.42; margin-bottom: 7px;
+      display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .news-excerpt {
+      font-size: 0.76rem; color: rgba(255,255,255,0.42); line-height: 1.5; flex: 1;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .news-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 11px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.06); }
+    .news-author { font-size: 0.7rem; font-weight: 600; color: rgba(255,255,255,0.38); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 130px; }
+    .news-time   { font-size: 0.68rem; color: rgba(255,255,255,0.28); flex-shrink: 0; }
+
+    .news-load-more { margin-top: 18px; display: flex; justify-content: center; }
+    .btn-load-more {
+      background: rgba(220,38,38,0.1); border: 1px solid rgba(220,38,38,0.28); color: rgba(248,113,113,0.8);
+      font-size: 0.82rem; font-weight: 700; padding: 9px 28px; border-radius: 25px;
+      cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 7px;
+    }
+    .btn-load-more:hover { background: rgba(220,38,38,0.2); border-color: rgba(220,38,38,0.5); color: #f87171; }
+    .news-updated { font-size: 0.68rem; color: rgba(255,255,255,0.2); margin-top: 14px; display: flex; align-items: center; gap: 5px; }
+
+    /* ── TOAST ── */
+    .toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 10000; display: flex; flex-direction: column; gap: 8px; }
+    .toast-msg {
+      background: rgba(30,41,59,0.95); border: 1px solid rgba(139,92,246,0.35); color: rgba(255,255,255,0.9);
+      padding: 12px 18px; border-radius: 10px; font-size: 0.85rem; font-weight: 600;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.4); display: flex; align-items: center; gap: 8px; animation: slideIn 0.25s ease;
+    }
+    @keyframes slideIn { from { transform: translateX(60px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 900px) {
+      .weather-forecast { justify-content: flex-start; padding-left: 0; margin-top: 16px; }
+      .wx-divider { display: none; }
+      .weather-now { padding-right: 0; margin-bottom: 14px; }
+      .weather-details { padding: 0; margin-bottom: 16px; gap: 16px; }
+    }
+    @media (max-width: 768px) {
+      .main-container { padding: 20px 14px 48px; }
+      .card-panel { padding: 20px; }
+      .verse-text { font-size: 1.05rem; }
+      .weather-temp { font-size: 2rem; }
+      .weather-details { gap: 12px; }
+      .day-schedule { max-height: 560px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="navbar-custom">
+    <div class="main-container" style="padding-top:0;padding-bottom:0;display:flex;align-items:center;justify-content:space-between;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <i class="fa-solid fa-sun" style="color:#f59e0b;font-size:1.3rem;"></i>
+        <span class="navbar-brand-text">Daily View</span>
+      </div>
+      <span class="navbar-date" id="navDate"></span>
+    </div>
+  </nav>
+
+  <div class="main-container">
+
+    <!-- ── WEATHER + VERSE + SCHEDULE ── -->
+    <div class="row g-4">
+
+      <!-- WEATHER (compact) -->
+      <div class="col-lg-2 col-md-6 col-12">
+        <div class="card-panel weather-panel h-100">
+          <div class="section-heading" style="font-size:0.75rem;gap:6px;">
+            <i class="fa-solid fa-cloud-sun-rain"></i> Weather
+            <button onclick="initWeather()" title="Refresh" style="margin-left:auto;background:none;border:none;color:rgba(6,182,212,0.5);cursor:pointer;padding:0;font-size:0.7rem;" onmouseover="this.style.color='#06b6d4'" onmouseout="this.style.color='rgba(6,182,212,0.5)'"><i class="fa-solid fa-rotate-right"></i></button>
+          </div>
+          <div id="wxLoading" class="weather-state" style="font-size:0.75rem;"><i class="fa-solid fa-circle-notch fa-spin"></i> Locating…</div>
+          <div id="wxError" class="weather-state error" style="display:none;font-size:0.75rem;">
+            <i class="fa-solid fa-triangle-exclamation"></i> Failed.
+            <span onclick="initWeather()" style="cursor:pointer;color:#06b6d4;text-decoration:underline;margin-left:4px;">Retry</span>
+          </div>
+          <div id="wxContent" style="display:none;text-align:center;">
+            <div class="weather-icon-bg" id="wxIconBg" style="margin:8px auto 6px;width:48px;height:48px;font-size:1.4rem;border-radius:12px;"><i class="fa-solid fa-sun" id="wxIcon" style="color:#f59e0b;"></i></div>
+            <div class="weather-temp" id="wxTemp" style="font-size:1.8rem;">--°F</div>
+            <div class="weather-cond" id="wxCond" style="font-size:0.75rem;margin-top:4px;">--</div>
+            <div class="weather-loc" id="wxLoc" style="font-size:0.65rem;margin-top:3px;justify-content:center;"><i class="fa-solid fa-location-dot" style="font-size:0.6rem;"></i> --</div>
+            <div style="margin-top:10px;font-size:0.78rem;color:rgba(255,255,255,0.55);display:flex;align-items:center;justify-content:center;gap:5px;">
+              <i class="fa-solid fa-wind" style="color:#a78bfa;font-size:0.75rem;"></i>
+              <span id="wxWind">-- mph</span>
+            </div>
+            <div class="weather-updated" id="wxUpdated" style="font-size:0.6rem;margin-top:8px;"></div>
+          </div>
+          <span id="wxFeels" style="display:none"></span>
+          <span id="wxHumidity" style="display:none"></span>
+          <span id="wxUV" style="display:none"></span>
+          <div id="wxForecast" style="display:none"></div>
+        </div>
+      </div>
+
+      <!-- VERSE OF THE DAY -->
+      <div class="col-lg-3 col-md-6 col-12">
+        <div class="card-panel verse-panel h-100">
+          <div class="section-heading"><i class="fa-solid fa-book-bible"></i> Verse of the Day</div>
+          <div class="verse-icon"><i class="fa-solid fa-cross"></i></div>
+          <div id="verseContent">
+            <div class="verse-loading"><i class="fa-solid fa-circle-notch fa-spin"></i> Loading today's verse…</div>
+          </div>
+          <button class="btn-verse-refresh" onclick="loadVerse()">
+            <i class="fa-solid fa-rotate-right"></i> Refresh
+          </button>
+        </div>
+      </div>
+
+      <!-- DAILY SCHEDULE -->
+      <div class="col-lg-7 col-md-12">
+        <div class="card-panel sched-panel">
+          <div class="section-heading">
+            <i class="fa-solid fa-calendar-day"></i>
+            My Schedule
+            <span id="gcalStatus" class="sync-badge loading">
+              <i class="fa-solid fa-circle-notch fa-spin" style="font-size:0.65rem;"></i> Syncing…
+            </span>
+          </div>
+
+          <!-- Week strip -->
+          <div class="week-nav">
+            <button class="btn-cal-nav" onclick="changeWeek(-1)"><i class="fa-solid fa-chevron-left"></i></button>
+            <div class="week-strip" id="weekStrip"></div>
+            <button class="btn-cal-nav" onclick="changeWeek(1)"><i class="fa-solid fa-chevron-right"></i></button>
+          </div>
+          <div class="week-sub">
+            <span class="week-month-label" id="weekMonthLabel"></span>
+            <button class="btn-today" onclick="goToday()">Today</button>
+          </div>
+
+          <!-- Day events -->
+          <div class="day-schedule" id="daySchedule">
+            <div class="sched-loading"><i class="fa-solid fa-circle-notch fa-spin"></i> Syncing calendar…</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── NEWS ── -->
+    <div class="row g-4 mt-0">
+      <div class="col-12">
+        <div class="card-panel news-panel">
+          <div class="section-heading">
+            <i class="fa-solid fa-newspaper"></i>
+            Daily Wire
+            <span style="font-size:0.62rem;font-weight:700;color:rgba(248,113,113,0.5);background:rgba(220,38,38,0.1);
+                         padding:1px 7px;border-radius:8px;letter-spacing:0.3px;text-transform:none;">RSS</span>
+            <button onclick="fetchNews()" title="Refresh news"
+              style="margin-left:auto;background:none;border:1px solid rgba(220,38,38,0.25);color:rgba(248,113,113,0.6);
+                     font-size:0.72rem;padding:3px 10px;border-radius:12px;cursor:pointer;
+                     display:flex;align-items:center;gap:5px;font-weight:600;transition:all 0.2s;"
+              onmouseover="this.style.background='rgba(220,38,38,0.1)';this.style.color='#f87171'"
+              onmouseout="this.style.background='none';this.style.color='rgba(248,113,113,0.6)'">
+              <i class="fa-solid fa-rotate-right" style="font-size:0.65rem;"></i> Refresh
+            </button>
+          </div>
+          <div id="newsLoading" class="news-state"><i class="fa-solid fa-circle-notch fa-spin"></i> Loading Daily Wire feed…</div>
+          <div id="newsError" class="news-state error" style="display:none;">
+            <i class="fa-solid fa-triangle-exclamation"></i> Unable to load feed.
+            <span onclick="fetchNews()" style="cursor:pointer;color:#f87171;text-decoration:underline;margin-left:4px;">Retry</span>
+          </div>
+          <div id="newsGrid" class="news-grid" style="display:none;"></div>
+          <div id="newsLoadMore" class="news-load-more" style="display:none;">
+            <button class="btn-load-more" onclick="showMoreNews()"><i class="fa-solid fa-chevron-down"></i> Load More Articles</button>
+          </div>
+          <div class="news-updated" id="newsUpdated" style="display:none;">
+            <i class="fa-regular fa-clock" style="font-size:0.62rem;"></i> <span id="newsUpdatedText"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- TOAST -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script>
+    // ─────────────────────────────────────────────
+    //  UTILITIES
+    // ─────────────────────────────────────────────
+    const GCAL_COLOR  = '#4285f4';
+    const TAMMY_COLOR = '#f472b6';
+    const CALENDARS = [
+      { url: 'https://calendar.google.com/calendar/ical/mark.britton%40gmail.com/public/basic.ics',    color: GCAL_COLOR  },
+      { url: 'https://calendar.google.com/calendar/ical/britton.tamara%40gmail.com/public/basic.ics', color: TAMMY_COLOR },
+    ];
+    const ICAL_URL   = CALENDARS[0].url;
+    const DOW_NUM    = { SU:0, MO:1, TU:2, WE:3, TH:4, FR:5, SA:6 };
+
+    function esc(s) {
+      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+    function toDateKey(dt) {
+      return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+    }
+    function fmt12(dt) {
+      return dt.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});
+    }
+    function toast(msg, icon='fa-check-circle', color='#8b5cf6') {
+      const el = document.createElement('div');
+      el.className = 'toast-msg';
+      el.innerHTML = `<i class="fa-solid ${icon}" style="color:${color};"></i> ${esc(msg)}`;
+      document.getElementById('toastContainer').appendChild(el);
+      setTimeout(() => el.remove(), 3000);
+    }
+
+    document.getElementById('navDate').textContent = new Date().toLocaleDateString('en-US',{
+      weekday:'long',month:'long',day:'numeric',year:'numeric'
+    });
+
+    // ═════════════════════════════════════════════
+    //  WEATHER
+    // ═════════════════════════════════════════════
+    const WX = {
+      0:{i:'fa-sun',c:'#f59e0b',d:'Clear Sky'},1:{i:'fa-sun',c:'#fbbf24',d:'Mostly Clear'},
+      2:{i:'fa-cloud-sun',c:'#94a3b8',d:'Partly Cloudy'},3:{i:'fa-cloud',c:'#64748b',d:'Overcast'},
+      45:{i:'fa-smog',c:'#94a3b8',d:'Foggy'},48:{i:'fa-smog',c:'#94a3b8',d:'Icy Fog'},
+      51:{i:'fa-cloud-rain',c:'#7dd3fc',d:'Light Drizzle'},53:{i:'fa-cloud-rain',c:'#60a5fa',d:'Drizzle'},
+      55:{i:'fa-cloud-rain',c:'#60a5fa',d:'Heavy Drizzle'},61:{i:'fa-cloud-rain',c:'#60a5fa',d:'Light Rain'},
+      63:{i:'fa-cloud-showers-heavy',c:'#3b82f6',d:'Rain'},65:{i:'fa-cloud-showers-heavy',c:'#2563eb',d:'Heavy Rain'},
+      71:{i:'fa-snowflake',c:'#e2e8f0',d:'Light Snow'},73:{i:'fa-snowflake',c:'#cbd5e1',d:'Snow'},
+      75:{i:'fa-snowflake',c:'#94a3b8',d:'Heavy Snow'},77:{i:'fa-snowflake',c:'#e2e8f0',d:'Snow Grains'},
+      80:{i:'fa-cloud-showers-heavy',c:'#60a5fa',d:'Rain Showers'},82:{i:'fa-cloud-showers-heavy',c:'#1d4ed8',d:'Violent Rain'},
+      85:{i:'fa-snowflake',c:'#e2e8f0',d:'Snow Showers'},95:{i:'fa-cloud-bolt',c:'#fbbf24',d:'Thunderstorm'},
+      96:{i:'fa-cloud-bolt',c:'#f59e0b',d:'T-Storm w/ Hail'},99:{i:'fa-cloud-bolt',c:'#d97706',d:'T-Storm w/ Hail'},
+    };
+    function wxInfo(code) {
+      if (WX[code]) return WX[code];
+      let best=0; for (const k of Object.keys(WX).map(Number).sort((a,b)=>a-b)){if(k<=code)best=k;else break;}
+      return WX[best]||{i:'fa-cloud',c:'#94a3b8',d:'Unknown'};
+    }
+    function uvLabel(uv) {
+      if(uv==null)return'--'; uv=Math.round(uv);
+      if(uv<=2)return`${uv} Low`;if(uv<=5)return`${uv} Mod`;if(uv<=7)return`${uv} High`;
+      if(uv<=10)return`${uv} V.High`;return`${uv} Extreme`;
+    }
+    function hexToRgb(hex){return[parseInt(hex.slice(1,3),16),parseInt(hex.slice(3,5),16),parseInt(hex.slice(5,7),16)].join(',');}
+    function wxShow(id){['wxLoading','wxError','wxContent'].forEach(x=>document.getElementById(x).style.display=x===id?(id==='wxContent'?'block':'flex'):'none');}
+
+    function renderWeather(data, loc) {
+      const cur=data.current, dai=data.daily, info=wxInfo(cur.weather_code);
+      const iconEl=document.getElementById('wxIcon');
+      iconEl.className=`fa-solid ${info.i}`; iconEl.style.color=info.c;
+      document.getElementById('wxIconBg').style.background=`rgba(${hexToRgb(info.c)},0.12)`;
+      document.getElementById('wxTemp').textContent=`${Math.round(cur.temperature_2m)}°F`;
+      document.getElementById('wxCond').textContent=info.d;
+      document.getElementById('wxLoc').innerHTML=`<i class="fa-solid fa-location-dot" style="font-size:0.65rem;"></i> ${esc(loc)}`;
+      document.getElementById('wxFeels').textContent=`${Math.round(cur.apparent_temperature)}°F`;
+      document.getElementById('wxHumidity').textContent=`${cur.relative_humidity_2m}%`;
+      document.getElementById('wxWind').textContent=`${Math.round(cur.wind_speed_10m)} mph`;
+      document.getElementById('wxUV').textContent=uvLabel(cur.uv_index);
+      const DOWS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+      document.getElementById('wxForecast').innerHTML=dai.time.map((ds,i)=>{
+        const dt=new Date(ds+'T12:00:00'),fi=wxInfo(dai.weather_code[i]);
+        return`<div class="fc-day"><div class="fc-dow${i===0?' is-today':''}">${i===0?'Today':DOWS[dt.getDay()]}</div><i class="fa-solid ${fi.i} fc-icon" style="color:${fi.c};"></i><div class="fc-hi">${Math.round(dai.temperature_2m_max[i])}°</div><div class="fc-lo">${Math.round(dai.temperature_2m_min[i])}°</div></div>`;
+      }).join('');
+      document.getElementById('wxUpdated').innerHTML=`<i class="fa-regular fa-clock" style="font-size:0.62rem;"></i> Updated ${new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}`;
+      wxShow('wxContent');
+    }
+    async function fetchWeatherData(lat,lon,loc){
+      const url=`https://api.open-meteo.com/v1/forecast?latitude=${lat.toFixed(5)}&longitude=${lon.toFixed(5)}&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m,uv_index&daily=weather_code,temperature_2m_max,temperature_2m_min&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=auto&forecast_days=7`;
+      const r=await fetch(url,{signal:AbortSignal.timeout(10000)});
+      const d=await r.json(); if(!d.current)throw new Error('bad'); renderWeather(d,loc);
+    }
+    async function initWeather(){
+      wxShow('wxLoading');
+      let lat,lon,loc='Your Location';
+      // Use cached location if less than 24 hours old
+      const cached=JSON.parse(localStorage.getItem('dvapp_location')||'null');
+      if(cached && (Date.now()-cached.ts < 24*60*60*1000)){
+        lat=cached.lat; lon=cached.lon; loc=cached.loc;
+        try{await fetchWeatherData(lat,lon,loc);}catch{wxShow('wxError');}
+        return;
+      }
+      try{
+        const pos=await new Promise((res,rej)=>navigator.geolocation?navigator.geolocation.getCurrentPosition(res,rej,{timeout:8000,maximumAge:300000}):rej());
+        lat=pos.coords.latitude; lon=pos.coords.longitude;
+        try{const gr=await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`,{signal:AbortSignal.timeout(5000)});const gd=await gr.json();const city=gd.city||gd.locality||gd.principalSubdivision||'';const state=gd.principalSubdivisionCode?.replace(/^[A-Z]+-/,'')||'';if(city)loc=[city,state].filter(Boolean).join(', ');}catch{}
+      }catch{
+        try{const ir=await fetch('https://ipapi.co/json/',{signal:AbortSignal.timeout(8000)});const id=await ir.json();lat=id.latitude;lon=id.longitude;loc=[id.city,id.region_code||id.region].filter(Boolean).join(', ')||'Your Location';}catch{wxShow('wxError');return;}
+      }
+      localStorage.setItem('dvapp_location',JSON.stringify({lat,lon,loc,ts:Date.now()}));
+      try{await fetchWeatherData(lat,lon,loc);}catch{wxShow('wxError');}
+    }
+    initWeather();
+    setInterval(initWeather, 30*60*1000);
+
+    // ─────────────────────────────────────────────
+    //  BIBLE VERSE
+    // ─────────────────────────────────────────────
+    const VERSES=[
+      {ref:'John 3:16',text:'For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life.'},
+      {ref:'Psalm 23:1',text:'The Lord is my shepherd; I shall not want.'},
+      {ref:'Philippians 4:13',text:'I can do all things through Christ which strengtheneth me.'},
+      {ref:'Romans 8:28',text:'And we know that all things work together for good to them that love God, to them who are the called according to his purpose.'},
+      {ref:'Proverbs 3:5-6',text:'Trust in the Lord with all thine heart; and lean not unto thine own understanding. In all thy ways acknowledge him, and he shall direct thy paths.'},
+      {ref:'Isaiah 40:31',text:'But they that wait upon the Lord shall renew their strength; they shall mount up with wings as eagles; they shall run, and not be weary; and they shall walk, and not faint.'},
+      {ref:'Jeremiah 29:11',text:'For I know the thoughts that I think toward you, saith the Lord, thoughts of peace, and not of evil, to give you an expected end.'},
+      {ref:'Joshua 1:9',text:'Have not I commanded thee? Be strong and of a good courage; be not afraid, neither be thou dismayed: for the Lord thy God is with thee whithersoever thou goest.'},
+      {ref:'Matthew 6:33',text:'But seek ye first the kingdom of God, and his righteousness; and all these things shall be added unto you.'},
+      {ref:'Psalm 46:1',text:'God is our refuge and strength, a very present help in trouble.'},
+      {ref:'Romans 12:2',text:'And be not conformed to this world: but be ye transformed by the renewing of your mind, that ye may prove what is that good, and acceptable, and perfect, will of God.'},
+      {ref:'2 Corinthians 5:7',text:'For we walk by faith, not by sight.'},
+      {ref:'Psalm 118:24',text:'This is the day which the Lord hath made; we will rejoice and be glad in it.'},
+      {ref:'Ephesians 2:8-9',text:'For by grace are ye saved through faith; and that not of yourselves: it is the gift of God: Not of works, lest any man should boast.'},
+      {ref:'Matthew 11:28',text:'Come unto me, all ye that labour and are heavy laden, and I will give you rest.'},
+      {ref:'Psalm 119:105',text:'Thy word is a lamp unto my feet, and a light unto my path.'},
+      {ref:'Galatians 5:22-23',text:'But the fruit of the Spirit is love, joy, peace, longsuffering, gentleness, goodness, faith, meekness, temperance: against such there is no law.'},
+      {ref:'1 Corinthians 13:4',text:'Charity suffereth long, and is kind; charity envieth not; charity vaunteth not itself, is not puffed up.'},
+      {ref:'Hebrews 11:1',text:'Now faith is the substance of things hoped for, the evidence of things not seen.'},
+      {ref:'Romans 6:23',text:'For the wages of sin is death; but the gift of God is eternal life through Jesus Christ our Lord.'},
+      {ref:'Psalm 37:4',text:'Delight thyself also in the Lord; and he shall give thee the desires of thine heart.'},
+      {ref:'John 14:6',text:'Jesus saith unto him, I am the way, the truth, and the life: no man cometh unto the Father, but by me.'},
+      {ref:'Lamentations 3:22-23',text:"It is of the Lord's mercies that we are not consumed, because his compassions fail not. They are new every morning: great is thy faithfulness."},
+      {ref:'Romans 5:8',text:'But God commendeth his love toward us, in that, while we were yet sinners, Christ died for us.'},
+      {ref:'1 Peter 5:7',text:'Casting all your care upon him; for he careth for you.'},
+      {ref:'Psalm 27:1',text:'The Lord is my light and my salvation; whom shall I fear? the Lord is the strength of my life; of whom shall I be afraid?'},
+      {ref:'John 10:10',text:'The thief cometh not, but for to steal, and to kill, and to destroy: I am come that they might have life, and that they might have it more abundantly.'},
+      {ref:'Philippians 4:7',text:'And the peace of God, which passeth all understanding, shall keep your hearts and minds through Christ Jesus.'},
+      {ref:'Psalm 91:1',text:'He that dwelleth in the secret place of the most High shall abide under the shadow of the Almighty.'},
+      {ref:'Isaiah 41:10',text:'Fear thou not; for I am with thee: be not dismayed; for I am thy God: I will strengthen thee; yea, I will help thee; yea, I will uphold thee with the right hand of my righteousness.'},
+      {ref:'2 Timothy 1:7',text:'For God hath not given us the spirit of fear; but of power, and of love, and of a sound mind.'},
+    ];
+    function loadVerse(){
+      const c=document.getElementById('verseContent');
+      c.innerHTML=`<div class="verse-loading"><i class="fa-solid fa-circle-notch fa-spin"></i> Loading…</div>`;
+      const now=new Date(), doy=Math.floor((now-new Date(now.getFullYear(),0,0))/86400000);
+      const fb=VERSES[doy%VERSES.length];
+      fetch('https://labs.bible.org/api/?passage=votd&type=json')
+        .then(r=>r.json()).then(d=>{const v=d&&d[0];v?renderVerse(v.text,`${v.bookname} ${v.chapter}:${v.verse}`,'NET Bible'):renderVerse(fb.text,fb.ref,'KJV');})
+        .catch(()=>renderVerse(fb.text,fb.ref,'KJV'));
+    }
+    function renderVerse(text,ref,tr){
+      document.getElementById('verseContent').innerHTML=`<p class="verse-text">"${esc(text)}"</p><p class="verse-reference">${esc(ref)}</p><p class="verse-translation">${esc(tr)}</p>`;
+    }
+    loadVerse();
+
+    // ═════════════════════════════════════════════
+    //  ICAL PARSER  (Google Calendar)
+    // ═════════════════════════════════════════════
+    let gcalEvents = {};  // { 'YYYY-MM-DD': [{title,start,end,notes,color,allDay,sortKey}] }
+
+    function parseIcalDate(value, params) {
+      value = value.trim();
+      const isUTC = value.endsWith('Z'), s = value.replace('Z','');
+      if (s.length === 8)
+        return { date: new Date(+s.slice(0,4), +s.slice(4,6)-1, +s.slice(6,8)), allDay: true };
+      if (s.length >= 15) {
+        const y=+s.slice(0,4),mo=+s.slice(4,6)-1,d=+s.slice(6,8),h=+s.slice(9,11),mi=+s.slice(11,13),sc=+s.slice(13,15);
+        return { date: isUTC ? new Date(Date.UTC(y,mo,d,h,mi,sc)) : new Date(y,mo,d,h,mi,sc), allDay: false };
+      }
+      return null;
+    }
+    function icalText(s){ return s.replace(/\\n/gi,'\n').replace(/\\,/g,',').replace(/\\\\/g,'\\').replace(/\\;/g,';'); }
+    function parseRRuleStr(s){ const r={}; s.split(';').forEach(p=>{const e=p.indexOf('=');if(e>-1)r[p.slice(0,e)]=p.slice(e+1);}); return r; }
+
+    function expandRRule(dtstart, dtend, allDay, rruleStr, exDateSet) {
+      const rule=parseRRuleStr(rruleStr), freq=rule.FREQ||'';
+      const interval=parseInt(rule.INTERVAL||'1',10), maxCount=rule.COUNT?parseInt(rule.COUNT,10):9999;
+      const duration=(dtend&&!allDay)?dtend-dtstart:0;
+      let until=null; if(rule.UNTIL){const p=parseIcalDate(rule.UNTIL,'');if(p)until=p.date;}
+      const byDays=rule.BYDAY?rule.BYDAY.split(','):null;
+      const byMonthDays=rule.BYMONTHDAY?rule.BYMONTHDAY.split(',').map(Number):null;
+      const byMonths=rule.BYMONTH?rule.BYMONTH.split(',').map(Number):null;
+      const today=new Date();
+      const winStart=new Date(today); winStart.setFullYear(winStart.getFullYear()-1);
+      const winEnd=new Date(today);   winEnd.setFullYear(winEnd.getFullYear()+2);
+      const results=[];
+
+      function push(dt){
+        if(results.length>=maxCount||(until&&dt>until)||dt>winEnd) return false;
+        if(dt>=winStart&&!exDateSet.has(toDateKey(dt)))
+          results.push({date:new Date(dt),endDate:duration>0?new Date(dt.getTime()+duration):null});
+        return true;
+      }
+      function matchesByDay(dt){
+        if(!byDays) return true;
+        return byDays.some(bd=>{
+          const abbr=bd.slice(-2), n=bd.length>2?parseInt(bd.slice(0,-2),10):0;
+          if(DOW_NUM[abbr]!==dt.getDay()) return false;
+          if(n===0) return true;
+          const mth=dt.getMonth(),yr=dt.getFullYear();
+          if(n>0){const first=new Date(yr,mth,1).getDay();return dt.getDate()===1+(DOW_NUM[abbr]-first+7)%7+(n-1)*7;}
+          else{const last=new Date(yr,mth+1,0);return dt.getDate()===last.getDate()-(last.getDay()-DOW_NUM[abbr]+7)%7+(n+1)*7;}
+        });
+      }
+
+      if(freq==='DAILY'){let cur=new Date(dtstart);for(let i=0;i<10000;i++){if(!push(cur))break;cur=new Date(cur);cur.setDate(cur.getDate()+interval);}}
+      else if(freq==='WEEKLY'){
+        const targets=byDays?byDays.map(bd=>DOW_NUM[bd.slice(-2)]):[dtstart.getDay()];
+        const ws0=new Date(dtstart); ws0.setDate(ws0.getDate()-ws0.getDay());
+        ws0.setHours(dtstart.getHours(),dtstart.getMinutes(),dtstart.getSeconds(),0);
+        let ws=new Date(ws0);
+        for(let wk=0;wk<5000;wk++){
+          if(ws>winEnd) break;
+          for(const dow of targets){const cand=new Date(ws);cand.setDate(ws.getDate()+dow);if(cand<dtstart)continue;if(!push(cand))break;}
+          ws.setDate(ws.getDate()+7*interval);
+        }
+      }
+      else if(freq==='MONTHLY'){let cur=new Date(dtstart);for(let i=0;i<5000;i++){if(cur>winEnd)break;if(matchesByDay(cur)&&(!byMonthDays||byMonthDays.includes(cur.getDate()))){if(!push(cur))break;}cur=new Date(cur);cur.setMonth(cur.getMonth()+interval);}}
+      else if(freq==='YEARLY'){let cur=new Date(dtstart);for(let i=0;i<200;i++){if(cur>winEnd)break;if(!byMonths||byMonths.includes(cur.getMonth()+1)){if(!push(cur))break;}cur=new Date(cur);cur.setFullYear(cur.getFullYear()+interval);}}
+      return results;
+    }
+
+    function parseIcal(text, color=GCAL_COLOR) {
+      text=text.replace(/\r\n/g,'\n').replace(/\r/g,'\n').replace(/\n[ \t]/g,'');
+      const map={}, rawEvents=[];
+      let raw=null, inEvent=false;
+      for(const line of text.split('\n')){
+        if(!line) continue;
+        if(line==='BEGIN:VEVENT'){raw={};inEvent=true;continue;}
+        if(line==='END:VEVENT'){if(raw)rawEvents.push(raw);raw=null;inEvent=false;continue;}
+        if(!inEvent||!raw) continue;
+        const colon=line.indexOf(':'); if(colon<0) continue;
+        const propFull=line.slice(0,colon), value=line.slice(colon+1);
+        const semi=propFull.indexOf(';');
+        const name=(semi<0?propFull:propFull.slice(0,semi)).toUpperCase();
+        const params=semi<0?'':propFull.slice(semi+1);
+        if(name==='EXDATE'){if(!raw._EXDATE)raw._EXDATE=[];raw._EXDATE.push({params,value});}
+        else raw[name]={params,value};
+      }
+      for(const raw of rawEvents){
+        if(!raw.SUMMARY||!raw.DTSTART) continue;
+        const title=icalText(raw.SUMMARY.value);
+        const loc=raw.LOCATION?icalText(raw.LOCATION.value).replace(/\n/g,' '):'';
+        const desc=raw.DESCRIPTION?icalText(raw.DESCRIPTION.value).replace(/\n/g,' ').replace(/https?:\/\/\S+/g,'').trim():'';
+        const sp=parseIcalDate(raw.DTSTART.value,raw.DTSTART.params); if(!sp) continue;
+        const{date:dtstart,allDay}=sp;
+        let dtend=null; if(raw.DTEND){const ep=parseIcalDate(raw.DTEND.value,raw.DTEND.params);if(ep)dtend=ep.date;}
+        const exDateSet=new Set();
+        if(raw._EXDATE) raw._EXDATE.forEach(exd=>exd.value.split(',').forEach(v=>{const p=parseIcalDate(v.trim(),exd.params);if(p)exDateSet.add(toDateKey(p.date));}));
+        // notes: prefer location, else first 100 chars of description
+        const notes=[loc, loc?'':(desc.slice(0,100))].filter(Boolean).join('').trim();
+
+        function addOcc(dt,endDt){
+          const key=toDateKey(dt); if(!map[key])map[key]=[];
+          const startStr=allDay?'':fmt12(dt);
+          const endStr=(!allDay&&endDt)?fmt12(endDt):'';
+          const mins=allDay?0:dt.getHours()*60+dt.getMinutes();
+          map[key].push({title,start:startStr,end:endStr,notes,color,allDay,sortKey:String(mins).padStart(4,'0')});
+        }
+        if(raw.RRULE) expandRRule(dtstart,dtend,allDay,raw.RRULE.value,exDateSet).forEach(({date:d,endDate:ed})=>addOcc(d,ed));
+        else if(!exDateSet.has(toDateKey(dtstart))) addOcc(dtstart,dtend);
+      }
+      Object.values(map).forEach(arr=>arr.sort((a,b)=>a.sortKey.localeCompare(b.sortKey)));
+      return map;
+    }
+
+    function setGcalStatus(state){
+      const el=document.getElementById('gcalStatus');
+      el.className=`sync-badge ${state}`;
+      if(state==='loading') el.innerHTML=`<i class="fa-solid fa-circle-notch fa-spin" style="font-size:0.65rem;"></i> Syncing…`;
+      else if(state==='ok') el.innerHTML=`<i class="fa-solid fa-circle" style="font-size:0.45rem;"></i> Synced`;
+      else{el.onclick=fetchGcalEvents;el.innerHTML=`<i class="fa-solid fa-triangle-exclamation" style="font-size:0.65rem;"></i> Retry`;}
+    }
+
+    async function fetchOneCalendar(cal){
+      const proxies=[
+        'https://api.allorigins.win/raw?url='+encodeURIComponent(cal.url),
+        'https://corsproxy.io/?'+cal.url,
+        'https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(cal.url)
+      ];
+      for(const u of proxies){
+        try{const r=await fetch(u,{signal:AbortSignal.timeout(12000)});const t=await r.text();if(t.includes('BEGIN:VCALENDAR'))return parseIcal(t,cal.color);}catch{}
+      }
+      return {};
+    }
+
+    async function fetchGcalEvents(){
+      setGcalStatus('loading');
+      const results = await Promise.all(CALENDARS.map(fetchOneCalendar));
+      // Merge all calendars into gcalEvents
+      gcalEvents = {};
+      for(const map of results){
+        for(const [day, evts] of Object.entries(map)){
+          if(!gcalEvents[day]) gcalEvents[day]=[];
+          gcalEvents[day].push(...evts);
+        }
+      }
+      // Sort each day's events by sortKey
+      for(const day of Object.keys(gcalEvents)){
+        gcalEvents[day].sort((a,b)=>a.sortKey.localeCompare(b.sortKey));
+      }
+      setGcalStatus('ok');
+      renderWeekStrip();
+      renderSchedule();
+      toast('Calendars synced','fa-calendar-check',GCAL_COLOR);
+    }
+    setInterval(fetchGcalEvents, 15*60*1000);
+
+    // ═════════════════════════════════════════════
+    //  SCHEDULE  —  WEEK STRIP + DAY VIEW
+    // ═════════════════════════════════════════════
+    const TODAY      = new Date();
+    const TODAY_KEY  = toDateKey(TODAY);
+    let schedDate    = TODAY_KEY;   // currently displayed day
+    let weekOffset   = 0;           // weeks relative to this week
+
+    const DOW_SHORT  = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const MONTH_NAMES= ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+    /* Get Sunday-start week containing TODAY + weekOffset weeks */
+    function getWeekDays() {
+      const base = new Date(TODAY);
+      base.setDate(base.getDate() + weekOffset * 7);
+      const sun = new Date(base);
+      sun.setDate(base.getDate() - base.getDay());
+      sun.setHours(0,0,0,0);
+      return Array.from({length:7}, (_,i) => { const d=new Date(sun); d.setDate(sun.getDate()+i); return d; });
+    }
+
+    function renderWeekStrip() {
+      const days = getWeekDays();
+      const strip = document.getElementById('weekStrip');
+
+      strip.innerHTML = days.map(d => {
+        const key       = toDateKey(d);
+        const isToday   = key === TODAY_KEY;
+        const isSel     = key === schedDate;
+        const hasEvents = (gcalEvents[key]||[]).length > 0;
+        let cls = 'week-day';
+        if (isToday && !isSel) cls += ' is-today';
+        if (isSel)             cls += ' is-selected';
+        const pipColor = isSel ? '#60a5fa' : (isToday ? '#a78bfa' : '#4285f4');
+        return `<div class="${cls}" onclick="selectDay('${key}')">
+          <span class="wd-dow">${DOW_SHORT[d.getDay()]}</span>
+          <span class="wd-num">${d.getDate()}</span>
+          <div class="wd-pip" style="background:${hasEvents?pipColor:'transparent'};"></div>
+        </div>`;
+      }).join('');
+
+      // Month / range label
+      const first = days[0], last = days[6];
+      const lbl = first.getMonth() === last.getMonth()
+        ? `${MONTH_NAMES[first.getMonth()]} ${first.getFullYear()}`
+        : `${MONTH_NAMES[first.getMonth()].slice(0,3)} – ${MONTH_NAMES[last.getMonth()].slice(0,3)} ${last.getFullYear()}`;
+      document.getElementById('weekMonthLabel').textContent = lbl;
+    }
+
+    function changeWeek(delta) {
+      weekOffset += delta;
+      renderWeekStrip();
+    }
+
+    function goToday() {
+      weekOffset = 0;
+      schedDate  = TODAY_KEY;
+      renderWeekStrip();
+      renderSchedule();
+    }
+
+    function selectDay(key) {
+      schedDate = key;
+      // If the chosen day isn't in the current week strip, jump to that week
+      const days = getWeekDays();
+      const inStrip = days.some(d => toDateKey(d) === key);
+      if (!inStrip) {
+        const [y,m,d] = key.split('-').map(Number);
+        const dt = new Date(y, m-1, d);
+        dt.setHours(0,0,0,0);
+        const todaySun = new Date(TODAY); todaySun.setDate(TODAY.getDate()-TODAY.getDay()); todaySun.setHours(0,0,0,0);
+        const dtSun   = new Date(dt);    dtSun.setDate(dt.getDate()-dt.getDay());
+        weekOffset = Math.round((dtSun - todaySun) / (7*24*60*60*1000));
+      }
+      renderWeekStrip();
+      renderSchedule();
+    }
+
+    /* Convert "9:30 AM" → minutes since midnight */
+    function timeTo24Mins(str) {
+      if (!str) return -1;
+      const m = str.match(/(\d+):(\d+)\s*(AM|PM)/i);
+      if (!m) return -1;
+      let h = parseInt(m[1]), min = parseInt(m[2]);
+      const p = m[3].toUpperCase();
+      if (p==='PM'&&h!==12) h+=12;
+      if (p==='AM'&&h===12) h=0;
+      return h*60+min;
+    }
+
+    function renderSchedule() {
+      const container = document.getElementById('daySchedule');
+      const [y,m,d]   = schedDate.split('-').map(Number);
+      const dt         = new Date(y, m-1, d);
+      const isToday    = schedDate === TODAY_KEY;
+
+      const dateLbl = isToday
+        ? `Today · ${dt.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}`
+        : dt.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+
+      const events = gcalEvents[schedDate] || [];
+      const allDay = events.filter(e => e.allDay);
+      const timed  = events.filter(e => !e.allDay);
+
+      let html = `<div class="day-header">${esc(dateLbl)}</div>`;
+
+      if (events.length === 0) {
+        html += `<div class="no-sched-msg">
+          <i class="fa-regular fa-calendar-xmark" style="font-size:1.5rem;opacity:.4;"></i>
+          <span>Nothing scheduled</span>
+        </div>`;
+        container.innerHTML = html;
+        return;
+      }
+
+      // All-day events
+      if (allDay.length) {
+        html += `<div class="allday-section"><div class="allday-label">All Day</div>`;
+        html += allDay.map(e => `
+          <div class="allday-chip">
+            <div class="allday-dot" style="background:${esc(e.color||GCAL_COLOR)};"></div>
+            ${esc(e.title)}
+          </div>`).join('');
+        html += `</div>`;
+      }
+
+      // Timed events with "now" line
+      if (timed.length) {
+        const nowMins = TODAY.getHours()*60 + TODAY.getMinutes();
+        let nowInserted = false;
+
+        timed.forEach(e => {
+          const startMins = timeTo24Mins(e.start);
+          // Insert "now" line when we first pass current time
+          if (isToday && !nowInserted && startMins > nowMins) {
+            html += nowLine();
+            nowInserted = true;
+          }
+          html += schedEventHtml(e);
+        });
+
+        // "Now" goes after all events if they're all in the past
+        if (isToday && !nowInserted) {
+          html += nowLine();
+        }
+      }
+
+      container.innerHTML = html;
+
+      // Scroll "now" line into view if viewing today
+      if (isToday) {
+        const nl = container.querySelector('.now-line');
+        if (nl) nl.scrollIntoView({ block:'center', behavior:'smooth' });
+      }
+    }
+
+    function nowLine() {
+      const t = new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+      return `<div class="now-line"><div class="now-dot"></div><span class="now-text">${t} now</span><div class="now-rule"></div></div>`;
+    }
+
+    function schedEventHtml(e) {
+      const sub = e.notes ? e.notes.slice(0,90) : '';
+      return `
+        <div class="sched-event">
+          <div class="sched-time">
+            <div class="sched-time-start">${esc(e.start)}</div>
+            ${e.end ? `<div class="sched-time-end">${esc(e.end)}</div>` : ''}
+          </div>
+          <div class="sched-bar" style="background:${esc(e.color||GCAL_COLOR)};"></div>
+          <div class="sched-details">
+            <div class="sched-title">${esc(e.title)}</div>
+            ${sub ? `<div class="sched-sub"><i class="fa-solid fa-location-dot" style="opacity:.4;margin-right:3px;font-size:0.65rem;"></i>${esc(sub)}</div>` : ''}
+          </div>
+        </div>`;
+    }
+
+    // Initial render (shows "syncing" until iCal loads)
+    renderWeekStrip();
+    fetchGcalEvents();
+
+    // ═════════════════════════════════════════════
+    //  NEWS  —  DAILY WIRE RSS
+    // ═════════════════════════════════════════════
+    const NEWS_RSS_URL = 'https://www.dailywire.com/feeds/rss.xml';
+    let allNewsItems   = [];
+    let visibleNews    = 9;
+
+    function relTime(ds){
+      if(!ds) return '';
+      const diff=(Date.now()-new Date(ds))/1000;
+      if(diff<60)return'just now';if(diff<3600)return`${Math.floor(diff/60)}m ago`;
+      if(diff<86400)return`${Math.floor(diff/3600)}h ago`;if(diff<604800)return`${Math.floor(diff/86400)}d ago`;
+      return new Date(ds).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    }
+    function stripHtml(h){const d=document.createElement('div');d.innerHTML=h;return(d.textContent||d.innerText||'').trim();}
+    function rssText(item,...tags){for(const t of tags){const els=item.getElementsByTagName(t);if(els.length&&els[0].textContent.trim())return els[0].textContent.trim();}return'';}
+    function rssImage(item){
+      for(const tag of['media:content','content','media:thumbnail','thumbnail']){const el=item.getElementsByTagName(tag)[0];if(el){const u=el.getAttribute('url')||el.getAttribute('src')||'';if(u&&/\.(jpe?g|png|webp|gif)/i.test(u))return u;}}
+      const enc=item.getElementsByTagName('enclosure')[0];if(enc&&(enc.getAttribute('type')||'').startsWith('image/'))return enc.getAttribute('url')||'';
+      const desc=rssText(item,'description');if(desc.includes('<img')){const m=desc.match(/<img[^>]+src=["']([^"']+)["']/i);if(m)return m[1];}
+      return '';
+    }
+    function parseRssFeed(xmlText){
+      const doc=new DOMParser().parseFromString(xmlText,'text/xml');
+      const results=[];
+      doc.querySelectorAll('item').forEach(item=>{
+        const title=rssText(item,'title'); if(!title)return;
+        let link='';const linkEl=item.getElementsByTagName('link')[0];if(linkEl)link=linkEl.textContent.trim()||linkEl.getAttribute('href')||'';
+        const excerpt=stripHtml(rssText(item,'description')).replace(/\s+/g,' ').trim().slice(0,200);
+        const pubDate=rssText(item,'pubDate','published','updated');
+        const author=rssText(item,'dc:creator','creator','author')||'Daily Wire';
+        const category=rssText(item,'category');
+        results.push({title,link,excerpt,pubDate,author,category,imgUrl:rssImage(item)});
+      });
+      return results;
+    }
+    function renderNewsGrid(items){
+      const grid=document.getElementById('newsGrid'), shown=items.slice(0,visibleNews);
+      grid.innerHTML=shown.map(item=>`
+        <a class="news-card" href="${esc(item.link)}" target="_blank" rel="noopener noreferrer">
+          ${item.imgUrl?`<img class="news-thumb" src="${esc(item.imgUrl)}" alt="" loading="lazy" onerror="this.style.display='none'">` : ''}
+          <div class="news-body">
+            ${item.category?`<div class="news-cat">${esc(item.category.split('|')[0].trim())}</div>`:''}
+            <div class="news-headline">${esc(item.title)}</div>
+            ${item.excerpt?`<div class="news-excerpt">${esc(item.excerpt)}</div>`:''}
+            <div class="news-footer">
+              <span class="news-author">${esc(item.author)}</span>
+              <span class="news-time">${relTime(item.pubDate)}</span>
+            </div>
+          </div>
+        </a>`).join('');
+      grid.style.display='grid';
+      document.getElementById('newsLoadMore').style.display=items.length>visibleNews?'flex':'none';
+    }
+    function showMoreNews(){visibleNews+=6;renderNewsGrid(allNewsItems);}
+    async function fetchNews(){
+      document.getElementById('newsLoading').style.display='flex';
+      document.getElementById('newsGrid').style.display='none';
+      document.getElementById('newsError').style.display='none';
+      document.getElementById('newsLoadMore').style.display='none';
+      document.getElementById('newsUpdated').style.display='none';
+      const proxies=['https://api.allorigins.win/raw?url='+encodeURIComponent(NEWS_RSS_URL),'https://corsproxy.io/?'+NEWS_RSS_URL,'https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(NEWS_RSS_URL)];
+      let text=null;
+      for(const url of proxies){try{const r=await fetch(url,{signal:AbortSignal.timeout(12000)});const t=await r.text();if(t.includes('<rss')||t.includes('<channel')){text=t;break;}}catch{}}
+      document.getElementById('newsLoading').style.display='none';
+      if(!text){document.getElementById('newsError').style.display='flex';return;}
+      allNewsItems=parseRssFeed(text); visibleNews=9;
+      if(!allNewsItems.length){document.getElementById('newsError').style.display='flex';return;}
+      renderNewsGrid(allNewsItems);
+      document.getElementById('newsUpdatedText').textContent=`Updated ${new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})} · ${allNewsItems.length} articles`;
+      document.getElementById('newsUpdated').style.display='flex';
+    }
+    fetchNews();
+    setInterval(fetchNews, 20*60*1000);
+  </script>
+</body>
+</html>
