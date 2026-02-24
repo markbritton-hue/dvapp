@@ -1253,6 +1253,15 @@
       const dateStr = new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
       parts.push(`Good day. Today is ${dateStr}.`);
 
+      // Weather
+      const wxTemp = document.getElementById('wxTemp')?.textContent?.trim();
+      const wxCond = document.getElementById('wxCond')?.textContent?.trim();
+      const wxWind = document.getElementById('wxWind')?.textContent?.trim();
+      const wxLoc  = document.getElementById('wxLoc')?.textContent?.trim();
+      if(wxTemp && wxCond && wxTemp !== '--°F') {
+        parts.push(`Current weather${wxLoc?' in '+wxLoc.replace(/^\s*\S+\s*/,''):''}: ${wxCond}, ${wxTemp}.${wxWind&&wxWind!=='-- mph'?' Wind '+wxWind+'.':''}`);
+      }
+
       // Verse
       const verseEl = document.getElementById('verseContent');
       const verseText = verseEl?.querySelector('.verse-text')?.textContent?.replace(/["""]/g,'').trim();
