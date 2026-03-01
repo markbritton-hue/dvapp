@@ -1349,6 +1349,7 @@ fetchNews();
       { id: 'bitcoin',  name: 'Bitcoin',  sym: 'BTC',    icon: 'fa-brands fa-bitcoin',  color: '#f7931a', bg: 'rgba(247,147,26,0.15)'  },
       { id: 'solana',   name: 'Solana',   sym: 'SOL',    icon: 'fa-solid fa-bolt',       color: '#9945ff', bg: 'rgba(153,69,255,0.15)'  },
       { id: 'ethereum', name: 'Ethereum', sym: 'ETH',    icon: 'fa-brands fa-ethereum',  color: '#627eea', bg: 'rgba(98,126,234,0.15)'  },
+      { id: 'ripple',   name: 'XRP',      sym: 'XRP',    icon: 'fa-solid fa-droplet',    color: '#346aa9', bg: 'rgba(52,106,169,0.15)'  },
     ];
 
     function fmtPrice(val) {
@@ -1383,10 +1384,9 @@ fetchNews();
       const grid = document.getElementById('pricesGrid');
       grid.innerHTML = '<div class="news-state"><i class="fa-solid fa-circle-notch fa-spin"></i> Loading prices…</div>';
       try {
-        const [cryptoRes, goldRes, xrtRes] = await Promise.allSettled([
-          fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd&include_24hr_change=true'),
+        const [cryptoRes, goldRes] = await Promise.allSettled([
+          fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana,ripple&vs_currencies=usd&include_24hr_change=true'),
           fetch('https://api.metals.live/v1/spot/gold'),
-          fetch('https://corsproxy.io/?https://query1.finance.yahoo.com/v8/finance/chart/XRT?interval=1d&range=1d'),
         ]);
 
         let crypto = {};
@@ -1401,26 +1401,10 @@ fetchNews();
                                         : (gd.gold ?? gd.price ?? null);
         }
 
-        let xrtPrice = null, xrtChange = null;
-        if (xrtRes.status === 'fulfilled' && xrtRes.value.ok) {
-          const xd = await xrtRes.value.json();
-          const meta = xd?.chart?.result?.[0]?.meta;
-          if (meta) {
-            xrtPrice = meta.regularMarketPrice ?? null;
-            const prev = meta.chartPreviousClose ?? meta.previousClose ?? null;
-            if (xrtPrice != null && prev) xrtChange = ((xrtPrice - prev) / prev) * 100;
-          }
-        }
-
         const tiles = PRICE_ASSETS.map(a => {
           const d = crypto[a.id];
           return renderPriceTile(a, d?.usd ?? null, d?.usd_24h_change ?? null);
         });
-
-        tiles.push(renderPriceTile(
-          { id: 'xrt', name: 'XRT ETF', sym: 'XRT', icon: 'fa-solid fa-store', color: '#34d399', bg: 'rgba(52,211,153,0.15)' },
-          xrtPrice, xrtChange
-        ));
 
         tiles.push(renderPriceTile(
           { id: 'gold', name: 'Gold', sym: 'XAU/oz', icon: 'fa-solid fa-coins', color: '#fbbf24', bg: 'rgba(251,191,36,0.15)' },
