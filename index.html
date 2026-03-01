@@ -333,6 +333,33 @@
     .btn-load-more:hover { background: rgba(220,38,38,0.2); border-color: rgba(220,38,38,0.5); color: #f87171; }
     .news-updated { font-size: 0.68rem; color: rgba(255,255,255,0.2); margin-top: 14px; display: flex; align-items: center; gap: 5px; }
 
+    /* ═══════════════════════════════════════════
+       MARKET PRICES CARD
+    ═══════════════════════════════════════════ */
+    .prices-panel { border: 1px solid rgba(251,191,36,0.25); }
+    .prices-panel .section-heading { color: #fbbf24; }
+    .prices-grid { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 4px; }
+    .price-tile {
+      flex: 1; min-width: 155px; background: rgba(15,23,42,0.5);
+      border: 1px solid rgba(255,255,255,0.07); border-radius: 12px;
+      padding: 14px 16px; display: flex; flex-direction: column; gap: 6px;
+      transition: border-color 0.2s;
+    }
+    .price-tile:hover { border-color: rgba(251,191,36,0.3); }
+    .price-tile-header { display: flex; align-items: center; gap: 8px; }
+    .price-tile-icon {
+      width: 30px; height: 30px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.85rem; flex-shrink: 0;
+    }
+    .price-tile-name { font-size: 0.72rem; font-weight: 700; color: rgba(255,255,255,0.45); text-transform: uppercase; letter-spacing: 0.8px; }
+    .price-tile-sym  { font-size: 0.62rem; font-weight: 600; color: rgba(255,255,255,0.28); }
+    .price-tile-value { font-size: 1.25rem; font-weight: 800; color: rgba(255,255,255,0.92); line-height: 1; }
+    .price-tile-change { font-size: 0.75rem; font-weight: 700; display: flex; align-items: center; gap: 3px; }
+    .price-tile-change.up   { color: #10b981; }
+    .price-tile-change.down { color: #f87171; }
+    .price-updated { font-size: 0.62rem; color: rgba(255,255,255,0.2); margin-top: 6px; display: flex; align-items: center; gap: 4px; }
+
     /* ── TOAST ── */
     .toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 10000; display: flex; flex-direction: column; gap: 8px; }
     .toast-msg {
@@ -477,6 +504,32 @@
             <span onclick="initSpotify()" style="cursor:pointer;color:#1ed760;text-decoration:underline;margin-left:4px;">Retry</span>
           </div>
           <div id="podcastGrid" class="podcast-grid" style="display:none;"></div>
+        </div>
+      </div>
+    </div>
+
+<!-- ── MARKET PRICES ── -->
+    <div class="row g-4 mt-0">
+      <div class="col-12">
+        <div class="card-panel prices-panel">
+          <div class="section-heading">
+            <i class="fa-solid fa-chart-line"></i>
+            Market Prices
+            <button onclick="fetchPrices()" title="Refresh prices"
+              style="margin-left:auto;background:none;border:1px solid rgba(251,191,36,0.25);color:rgba(251,191,36,0.6);
+                     font-size:0.72rem;padding:3px 10px;border-radius:12px;cursor:pointer;
+                     display:flex;align-items:center;gap:5px;font-weight:600;transition:all 0.2s;"
+              onmouseover="this.style.background='rgba(251,191,36,0.1)';this.style.color='#fbbf24'"
+              onmouseout="this.style.background='none';this.style.color='rgba(251,191,36,0.6)'">
+              <i class="fa-solid fa-rotate-right" style="font-size:0.65rem;"></i> Refresh
+            </button>
+          </div>
+          <div id="pricesGrid" class="prices-grid">
+            <div class="news-state"><i class="fa-solid fa-circle-notch fa-spin"></i> Loading prices…</div>
+          </div>
+          <div class="price-updated" id="pricesUpdated" style="display:none;">
+            <i class="fa-regular fa-clock" style="font-size:0.6rem;"></i> <span id="pricesUpdatedText"></span>
+          </div>
         </div>
       </div>
     </div>
@@ -1288,6 +1341,86 @@ fetchNews();
 
       return parts.join('  ');
     }
+
+    // ═════════════════════════════════════════════
+    //  MARKET PRICES  (CoinGecko + metals.live)
+    // ═════════════════════════════════════════════
+    const PRICE_ASSETS = [
+      { id: 'bitcoin',  name: 'Bitcoin',  sym: 'BTC',    icon: 'fa-brands fa-bitcoin',  color: '#f7931a', bg: 'rgba(247,147,26,0.15)'  },
+      { id: 'solana',   name: 'Solana',   sym: 'SOL',    icon: 'fa-solid fa-bolt',       color: '#9945ff', bg: 'rgba(153,69,255,0.15)'  },
+      { id: 'ethereum', name: 'Ethereum', sym: 'ETH',    icon: 'fa-brands fa-ethereum',  color: '#627eea', bg: 'rgba(98,126,234,0.15)'  },
+    ];
+
+    function fmtPrice(val) {
+      if (val == null) return '--';
+      if (val >= 1000) return '$' + val.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+      if (val >= 1)    return '$' + val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      return '$' + val.toFixed(4);
+    }
+
+    function renderPriceTile(asset, price, change24h) {
+      const up        = change24h != null && change24h >= 0;
+      const cls       = change24h == null ? '' : (up ? 'up' : 'down');
+      const arrow     = change24h == null ? '' : (up ? '<i class="fa-solid fa-arrow-trend-up"></i>' : '<i class="fa-solid fa-arrow-trend-down"></i>');
+      const changeTxt = change24h == null ? '' : `${up ? '+' : ''}${change24h.toFixed(2)}%`;
+      return `
+        <div class="price-tile">
+          <div class="price-tile-header">
+            <div class="price-tile-icon" style="background:${asset.bg};color:${asset.color};">
+              <i class="${asset.icon}"></i>
+            </div>
+            <div>
+              <div class="price-tile-name">${esc(asset.name)}</div>
+              <div class="price-tile-sym">${esc(asset.sym)}</div>
+            </div>
+          </div>
+          <div class="price-tile-value">${fmtPrice(price)}</div>
+          ${changeTxt ? `<div class="price-tile-change ${cls}">${arrow} ${changeTxt}</div>` : ''}
+        </div>`;
+    }
+
+    async function fetchPrices() {
+      const grid = document.getElementById('pricesGrid');
+      grid.innerHTML = '<div class="news-state"><i class="fa-solid fa-circle-notch fa-spin"></i> Loading prices…</div>';
+      try {
+        const [cryptoRes, goldRes] = await Promise.allSettled([
+          fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd&include_24hr_change=true'),
+          fetch('https://api.metals.live/v1/spot/gold'),
+        ]);
+
+        let crypto = {};
+        if (cryptoRes.status === 'fulfilled' && cryptoRes.value.ok) {
+          crypto = await cryptoRes.value.json();
+        }
+
+        let goldPrice = null;
+        if (goldRes.status === 'fulfilled' && goldRes.value.ok) {
+          const gd = await goldRes.value.json();
+          goldPrice = Array.isArray(gd) ? (gd[0]?.gold ?? gd[0]?.price ?? null)
+                                        : (gd.gold ?? gd.price ?? null);
+        }
+
+        const tiles = PRICE_ASSETS.map(a => {
+          const d = crypto[a.id];
+          return renderPriceTile(a, d?.usd ?? null, d?.usd_24h_change ?? null);
+        });
+
+        tiles.push(renderPriceTile(
+          { id: 'gold', name: 'Gold', sym: 'XAU/oz', icon: 'fa-solid fa-coins', color: '#fbbf24', bg: 'rgba(251,191,36,0.15)' },
+          goldPrice, null
+        ));
+
+        grid.innerHTML = tiles.join('');
+        document.getElementById('pricesUpdated').style.display = 'flex';
+        document.getElementById('pricesUpdatedText').textContent =
+          `Updated ${new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`;
+      } catch(e) {
+        grid.innerHTML = '<div class="news-state error"><i class="fa-solid fa-triangle-exclamation"></i> Could not load prices. <span onclick="fetchPrices()" style="cursor:pointer;color:#fbbf24;text-decoration:underline;margin-left:4px;">Retry</span></div>';
+      }
+    }
+
+    fetchPrices();
+    setInterval(fetchPrices, 5 * 60 * 1000);
 
     function toggleReadAloud() {
       const btn   = document.getElementById('readAloudBtn');
