@@ -1383,9 +1383,10 @@ fetchNews();
       const grid = document.getElementById('pricesGrid');
       grid.innerHTML = '<div class="news-state"><i class="fa-solid fa-circle-notch fa-spin"></i> Loading prices…</div>';
       try {
-        const [cryptoRes, goldRes] = await Promise.allSettled([
+        const [cryptoRes, goldRes, xrtRes] = await Promise.allSettled([
           fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd&include_24hr_change=true'),
           fetch('https://api.metals.live/v1/spot/gold'),
+          fetch('https://corsproxy.io/?https://query1.finance.yahoo.com/v8/finance/chart/XRT?interval=1d&range=1d'),
         ]);
 
         let crypto = {};
@@ -1400,10 +1401,26 @@ fetchNews();
                                         : (gd.gold ?? gd.price ?? null);
         }
 
+        let xrtPrice = null, xrtChange = null;
+        if (xrtRes.status === 'fulfilled' && xrtRes.value.ok) {
+          const xd = await xrtRes.value.json();
+          const meta = xd?.chart?.result?.[0]?.meta;
+          if (meta) {
+            xrtPrice = meta.regularMarketPrice ?? null;
+            const prev = meta.chartPreviousClose ?? meta.previousClose ?? null;
+            if (xrtPrice != null && prev) xrtChange = ((xrtPrice - prev) / prev) * 100;
+          }
+        }
+
         const tiles = PRICE_ASSETS.map(a => {
           const d = crypto[a.id];
           return renderPriceTile(a, d?.usd ?? null, d?.usd_24h_change ?? null);
         });
+
+        tiles.push(renderPriceTile(
+          { id: 'xrt', name: 'XRT ETF', sym: 'XRT', icon: 'fa-solid fa-store', color: '#34d399', bg: 'rgba(52,211,153,0.15)' },
+          xrtPrice, xrtChange
+        ));
 
         tiles.push(renderPriceTile(
           { id: 'gold', name: 'Gold', sym: 'XAU/oz', icon: 'fa-solid fa-coins', color: '#fbbf24', bg: 'rgba(251,191,36,0.15)' },
