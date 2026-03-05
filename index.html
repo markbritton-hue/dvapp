@@ -1458,7 +1458,7 @@ fetchNews();
     function initBibleReading() {
       const el = document.getElementById('bibleReadingContent');
       const dayEl = document.getElementById('bibleDayLabel');
-      const PLAN_START = new Date(2026, 3, 1); // April 1, 2026
+      const PLAN_START = new Date(2026, 2, 4); // TEST: set to today so Day 1 is visible (revert to April 1)
       const TOTAL_DAYS = 365;
       const today = new Date(); today.setHours(0,0,0,0);
       const dayIdx = Math.floor((today - PLAN_START) / 86400000);
