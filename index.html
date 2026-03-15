@@ -6,7 +6,6 @@
   <title>Daily View</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -382,9 +381,7 @@
     ═══════════════════════════════════════════ */
     .radar-panel { border: 1px solid rgba(6,182,212,0.25); }
     .radar-panel .section-heading { color: #06b6d4; }
-    #radarMap { height: 360px; border-radius: 10px; overflow: hidden; }
-    .leaflet-container { background: #1e293b !important; }
-    .leaflet-tile-pane { filter: brightness(0.85) saturate(0.9); }
+    #radarMap { height: 420px; border-radius: 10px; overflow: hidden; border: none; display: block; width: 100%; }
     .radar-updated { font-size: 0.62rem; color: rgba(255,255,255,0.2); margin-top: 6px; display: flex; align-items: center; gap: 4px; }
 
     /* ── TOAST ── */
@@ -584,19 +581,18 @@
           <div class="section-heading">
             <i class="fa-solid fa-map-location-dot"></i>
             Weather Radar
-            <button onclick="refreshRadar()" title="Refresh radar"
+            <a href="https://www.windy.com/-Thunderstorms-thunder?thunder,42.165,-85.923,9,m:ePLadLZ" target="_blank" rel="noopener"
               style="margin-left:auto;background:none;border:1px solid rgba(6,182,212,0.25);color:rgba(6,182,212,0.6);
-                     font-size:0.72rem;padding:3px 10px;border-radius:12px;cursor:pointer;
+                     font-size:0.72rem;padding:3px 10px;border-radius:12px;cursor:pointer;text-decoration:none;
                      display:flex;align-items:center;gap:5px;font-weight:600;transition:all 0.2s;"
               onmouseover="this.style.background='rgba(6,182,212,0.1)';this.style.color='#06b6d4'"
               onmouseout="this.style.background='none';this.style.color='rgba(6,182,212,0.6)'">
-              <i class="fa-solid fa-rotate-right" style="font-size:0.65rem;"></i> Refresh
-            </button>
+              <i class="fa-solid fa-arrow-up-right-from-square" style="font-size:0.65rem;"></i> Open Windy
+            </a>
           </div>
-          <div id="radarMap"></div>
-          <div class="radar-updated" id="radarUpdated" style="display:none;">
-            <i class="fa-regular fa-clock" style="font-size:0.6rem;"></i> <span id="radarUpdatedText"></span>
-          </div>
+          <iframe id="radarMap"
+            src="https://embed.windy.com/embed2.html?lat=42.165&lon=-85.923&detailLat=42.165&detailLon=-85.923&zoom=9&level=surface&overlay=thunder&product=ecmwf&menu=&message=true&marker=&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=mph&metricTemp=%C2%B0F&radarRange=-1"
+            allowfullscreen></iframe>
         </div>
       </div>
     </div>
@@ -641,7 +637,6 @@
   <div class="toast-container" id="toastContainer"></div>
 
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
     // ─────────────────────────────────────────────
     //  UTILITIES
@@ -1646,51 +1641,6 @@ fetchNews();
         </a>`;
     }
     initBibleReading();
-
-    // ═════════════════════════════════════════════
-    //  RADAR MAP
-    // ═════════════════════════════════════════════
-    let radarMap = null;
-    let radarLayer = null;
-
-    async function initRadar() {
-      const cached = JSON.parse(localStorage.getItem('dvapp_location') || 'null');
-      const lat = cached ? cached.lat : 39.5;
-      const lon = cached ? cached.lon : -98.35;
-
-      if (!radarMap) {
-        radarMap = L.map('radarMap', { zoomControl: true, attributionControl: false }).setView([lat, lon], 7);
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-          subdomains: 'abcd', maxZoom: 19
-        }).addTo(radarMap);
-      } else {
-        radarMap.setView([lat, lon], 7);
-      }
-      await refreshRadar();
-    }
-
-    async function refreshRadar() {
-      if (!radarMap) return;
-      try {
-        const r = await fetch('https://api.rainviewer.com/public/weather-maps.json', { signal: AbortSignal.timeout(8000) });
-        const d = await r.json();
-        const frames = d.radar?.past || [];
-        if (!frames.length) return;
-        const latest = frames[frames.length - 1];
-        if (radarLayer) { radarMap.removeLayer(radarLayer); radarLayer = null; }
-        radarLayer = L.tileLayer(`https://tilecache.rainviewer.com${latest.path}/256/{z}/{x}/{y}/2/1_1.png`, {
-          opacity: 0.65, maxZoom: 15, tileSize: 256
-        }).addTo(radarMap);
-        const ts = new Date(latest.time * 1000);
-        document.getElementById('radarUpdatedText').textContent =
-          `Radar from ${ts.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} · refreshed ${new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`;
-        document.getElementById('radarUpdated').style.display = 'flex';
-      } catch(e) { console.error('Radar fetch failed:', e); }
-    }
-
-    // Delay init so geolocation has time to cache before radar loads
-    setTimeout(initRadar, 2000);
-    setInterval(refreshRadar, 10 * 60 * 1000);
 
     function toggleReadAloud() {
       const btn   = document.getElementById('readAloudBtn');
