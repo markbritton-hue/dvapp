@@ -383,6 +383,16 @@
     .radar-panel .section-heading { color: #06b6d4; }
     #radarMap { height: 420px; border-radius: 10px; overflow: hidden; border: none; display: block; width: 100%; }
     .radar-updated { font-size: 0.62rem; color: rgba(255,255,255,0.2); margin-top: 6px; display: flex; align-items: center; gap: 4px; }
+    .wx-alert-banner {
+      border-radius: 7px; padding: 5px 8px; font-size: 0.67rem; font-weight: 700;
+      display: flex; align-items: flex-start; gap: 5px; text-align: left; line-height: 1.3;
+      margin-bottom: 4px;
+    }
+    .wx-alert-banner:last-child { margin-bottom: 0; }
+    .wx-alert-extreme { background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.45); color: #fca5a5; }
+    .wx-alert-severe  { background: rgba(239,68,68,0.1);  border: 1px solid rgba(239,68,68,0.3);  color: #fca5a5; }
+    .wx-alert-moderate{ background: rgba(251,146,60,0.13); border: 1px solid rgba(251,146,60,0.38); color: #fdba74; }
+    .wx-alert-minor   { background: rgba(251,191,36,0.1);  border: 1px solid rgba(251,191,36,0.3);  color: #fde68a; }
 
     /* ── TOAST ── */
     .toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 10000; display: flex; flex-direction: column; gap: 8px; }
@@ -492,6 +502,7 @@
             </div>
             <div class="weather-updated" id="wxUpdated" style="font-size:0.6rem;margin-top:8px;"></div>
           </div>
+          <div id="wxAlerts" style="display:none;margin-top:6px;"></div>
           <span id="wxFeels" style="display:none"></span>
           <span id="wxHumidity" style="display:none"></span>
           <span id="wxUV" style="display:none"></span>
@@ -724,6 +735,26 @@
       const url=`https://api.open-meteo.com/v1/forecast?latitude=${lat.toFixed(5)}&longitude=${lon.toFixed(5)}&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m,uv_index&daily=weather_code,temperature_2m_max,temperature_2m_min&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=auto&forecast_days=7`;
       const r=await fetch(url,{signal:AbortSignal.timeout(10000)});
       const d=await r.json(); if(!d.current)throw new Error('bad'); renderWeather(d,loc);
+      fetchWeatherAlerts(lat,lon);
+    }
+    async function fetchWeatherAlerts(lat,lon){
+      const el=document.getElementById('wxAlerts');
+      el.innerHTML=''; el.style.display='none';
+      try{
+        const r=await fetch(`https://api.weather.gov/alerts/active?point=${lat.toFixed(4)},${lon.toFixed(4)}`,
+          {signal:AbortSignal.timeout(8000),headers:{'Accept':'application/geo+json'}});
+        const d=await r.json();
+        const alerts=(d.features||[])
+          .filter(f=>['Immediate','Expected'].includes(f.properties?.urgency))
+          .slice(0,3);
+        if(!alerts.length)return;
+        el.innerHTML=alerts.map(f=>{
+          const p=f.properties, sev=(p.severity||'').toLowerCase();
+          const cls=['extreme','severe'].includes(sev)?'wx-alert-extreme':sev==='minor'?'wx-alert-minor':'wx-alert-moderate';
+          return`<div class="wx-alert-banner ${cls}"><i class="fa-solid fa-triangle-exclamation" style="flex-shrink:0;margin-top:1px;"></i>${esc(p.event)}</div>`;
+        }).join('');
+        el.style.display='block';
+      }catch(e){}
     }
     async function initWeather(){
       wxShow('wxLoading');
