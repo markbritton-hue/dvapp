@@ -501,6 +501,29 @@
 
     </div>
 
+<!-- ── RADAR MAP ── -->
+    <div class="row g-4 mt-0">
+      <div class="col-12">
+        <div class="card-panel radar-panel">
+          <div class="section-heading">
+            <i class="fa-solid fa-map-location-dot"></i>
+            Weather Radar
+            <a href="https://www.windy.com/-Thunderstorms-thunder?thunder,42.165,-85.923,9,m:ePLadLZ" target="_blank" rel="noopener"
+              style="margin-left:auto;background:none;border:1px solid rgba(6,182,212,0.25);color:rgba(6,182,212,0.6);
+                     font-size:0.72rem;padding:3px 10px;border-radius:12px;cursor:pointer;text-decoration:none;
+                     display:flex;align-items:center;gap:5px;font-weight:600;transition:all 0.2s;"
+              onmouseover="this.style.background='rgba(6,182,212,0.1)';this.style.color='#06b6d4'"
+              onmouseout="this.style.background='none';this.style.color='rgba(6,182,212,0.6)'">
+              <i class="fa-solid fa-arrow-up-right-from-square" style="font-size:0.65rem;"></i> Open Windy
+            </a>
+          </div>
+          <iframe id="radarMap"
+            src="https://embed.windy.com/embed2.html?lat=42.165&lon=-85.923&detailLat=42.165&detailLon=-85.923&zoom=9&level=surface&overlay=thunder&product=ecmwf&menu=&message=true&marker=&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=mph&metricTemp=%C2%B0F&radarRange=-1"
+            allowfullscreen></iframe>
+        </div>
+      </div>
+    </div>
+
     <!-- ── SPOTIFY PODCASTS ── -->
     <div class="row g-4 mt-0">
       <div class="col-12">
@@ -570,29 +593,6 @@
           <div id="bibleReadingContent">
             <div class="news-state"><i class="fa-solid fa-circle-notch fa-spin"></i> Computing reading plan…</div>
           </div>
-        </div>
-      </div>
-    </div>
-
-<!-- ── RADAR MAP ── -->
-    <div class="row g-4 mt-0">
-      <div class="col-12">
-        <div class="card-panel radar-panel">
-          <div class="section-heading">
-            <i class="fa-solid fa-map-location-dot"></i>
-            Weather Radar
-            <a href="https://www.windy.com/-Thunderstorms-thunder?thunder,42.165,-85.923,9,m:ePLadLZ" target="_blank" rel="noopener"
-              style="margin-left:auto;background:none;border:1px solid rgba(6,182,212,0.25);color:rgba(6,182,212,0.6);
-                     font-size:0.72rem;padding:3px 10px;border-radius:12px;cursor:pointer;text-decoration:none;
-                     display:flex;align-items:center;gap:5px;font-weight:600;transition:all 0.2s;"
-              onmouseover="this.style.background='rgba(6,182,212,0.1)';this.style.color='#06b6d4'"
-              onmouseout="this.style.background='none';this.style.color='rgba(6,182,212,0.6)'">
-              <i class="fa-solid fa-arrow-up-right-from-square" style="font-size:0.65rem;"></i> Open Windy
-            </a>
-          </div>
-          <iframe id="radarMap"
-            src="https://embed.windy.com/embed2.html?lat=42.165&lon=-85.923&detailLat=42.165&detailLon=-85.923&zoom=9&level=surface&overlay=thunder&product=ecmwf&menu=&message=true&marker=&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=mph&metricTemp=%C2%B0F&radarRange=-1"
-            allowfullscreen></iframe>
         </div>
       </div>
     </div>
