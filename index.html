@@ -1450,6 +1450,18 @@ fetchNews();
       const dateStr = new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
       parts.push(`Good day. Today is ${dateStr}.`);
 
+      // Weather alerts — read first if any are active
+      const alertBadges = document.querySelectorAll('#severeBannerInner .severe-badge');
+      if(alertBadges.length) {
+        const alertTexts = [...alertBadges].map(b => b.textContent.trim()).join('. ');
+        parts.push(`Attention. There ${alertBadges.length===1?'is a':'are'} weather alert${alertBadges.length>1?'s':''} in effect. ${alertTexts}.`);
+      }
+      const cardAlerts = document.querySelectorAll('#wxAlerts .wx-alert-banner');
+      if(cardAlerts.length && !alertBadges.length) {
+        const cardTexts = [...cardAlerts].map(b => b.textContent.trim()).join('. ');
+        parts.push(`Weather advisory: ${cardTexts}.`);
+      }
+
       // Weather
       const wxTemp = document.getElementById('wxTemp')?.textContent?.trim();
       const wxCond = document.getElementById('wxCond')?.textContent?.trim();
