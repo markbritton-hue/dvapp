@@ -769,11 +769,22 @@
       el.innerHTML=''; el.style.display='none';
       banner.style.display='none'; bannerInner.innerHTML='';
       try{
-        const r=await fetch(`https://api.weather.gov/alerts/active?point=${lat.toFixed(4)},${lon.toFixed(4)}`,
-          {signal:AbortSignal.timeout(8000),headers:{'Accept':'application/geo+json'}});
+        // Step 1: resolve NWS forecast zone + county for this location
+        let alertUrl=`https://api.weather.gov/alerts/active?point=${lat.toFixed(4)},${lon.toFixed(4)}`;
+        try{
+          const pt=await fetch(`https://api.weather.gov/points/${lat.toFixed(4)},${lon.toFixed(4)}`,
+            {signal:AbortSignal.timeout(6000),headers:{'Accept':'application/geo+json'}});
+          const pd=await pt.json();
+          const zone=pd.properties?.forecastZone?.split('/').pop();
+          const county=pd.properties?.county?.split('/').pop();
+          const zones=[zone,county].filter(Boolean).join(',');
+          if(zones) alertUrl=`https://api.weather.gov/alerts/active?zone=${zones}`;
+        }catch{}
+        // Step 2: fetch alerts — filter only Actual status (not urgency, catches Future/Expected/Immediate)
+        const r=await fetch(alertUrl,{signal:AbortSignal.timeout(8000),headers:{'Accept':'application/geo+json'}});
         const d=await r.json();
         const alerts=(d.features||[])
-          .filter(f=>['Immediate','Expected'].includes(f.properties?.urgency))
+          .filter(f=>f.properties?.status==='Actual')
           .slice(0,5);
         if(!alerts.length)return;
         // Card-level badges (all alerts)
@@ -783,7 +794,7 @@
           return`<div class="wx-alert-banner ${cls}"><i class="fa-solid fa-triangle-exclamation" style="flex-shrink:0;margin-top:1px;"></i>${esc(p.event)}</div>`;
         }).join('');
         el.style.display='block';
-        // Top banner — only Extreme or Severe
+        // Top banner — only Extreme or Severe severity
         const severe=alerts.filter(f=>['extreme','severe'].includes((f.properties?.severity||'').toLowerCase()));
         if(!severe.length)return;
         bannerInner.innerHTML=severe.map(f=>{
