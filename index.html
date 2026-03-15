@@ -394,6 +394,26 @@
     .wx-alert-moderate{ background: rgba(251,146,60,0.13); border: 1px solid rgba(251,146,60,0.38); color: #fdba74; }
     .wx-alert-minor   { background: rgba(251,191,36,0.1);  border: 1px solid rgba(251,191,36,0.3);  color: #fde68a; }
 
+    /* ── TOP SEVERE WEATHER BANNER ── */
+    #severeBanner {
+      display: none;
+      background: #fff;
+      padding: 10px 0;
+      border-bottom: 3px solid #dc2626;
+    }
+    #severeBanner .severe-inner {
+      max-width: 1200px; margin: 0 auto; padding: 0 24px;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .severe-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: #fff; border: 2px solid #dc2626; border-radius: 6px;
+      padding: 5px 12px; color: #dc2626; font-weight: 800;
+      font-size: 0.82rem; letter-spacing: 0.2px; line-height: 1.3;
+    }
+    .severe-badge i { font-size: 0.85rem; flex-shrink: 0; animation: pulse-alert 1.2s ease-in-out infinite; }
+    @keyframes pulse-alert { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
     /* ── TOAST ── */
     .toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 10000; display: flex; flex-direction: column; gap: 8px; }
     .toast-msg {
@@ -441,6 +461,11 @@
       </button>
     </div>
   </nav>
+
+  <!-- SEVERE WEATHER BANNER -->
+  <div id="severeBanner">
+    <div class="severe-inner" id="severeBannerInner"></div>
+  </div>
 
   <div class="main-container">
 
@@ -739,21 +764,34 @@
     }
     async function fetchWeatherAlerts(lat,lon){
       const el=document.getElementById('wxAlerts');
+      const banner=document.getElementById('severeBanner');
+      const bannerInner=document.getElementById('severeBannerInner');
       el.innerHTML=''; el.style.display='none';
+      banner.style.display='none'; bannerInner.innerHTML='';
       try{
         const r=await fetch(`https://api.weather.gov/alerts/active?point=${lat.toFixed(4)},${lon.toFixed(4)}`,
           {signal:AbortSignal.timeout(8000),headers:{'Accept':'application/geo+json'}});
         const d=await r.json();
         const alerts=(d.features||[])
           .filter(f=>['Immediate','Expected'].includes(f.properties?.urgency))
-          .slice(0,3);
+          .slice(0,5);
         if(!alerts.length)return;
+        // Card-level badges (all alerts)
         el.innerHTML=alerts.map(f=>{
           const p=f.properties, sev=(p.severity||'').toLowerCase();
           const cls=['extreme','severe'].includes(sev)?'wx-alert-extreme':sev==='minor'?'wx-alert-minor':'wx-alert-moderate';
           return`<div class="wx-alert-banner ${cls}"><i class="fa-solid fa-triangle-exclamation" style="flex-shrink:0;margin-top:1px;"></i>${esc(p.event)}</div>`;
         }).join('');
         el.style.display='block';
+        // Top banner — only Extreme or Severe
+        const severe=alerts.filter(f=>['extreme','severe'].includes((f.properties?.severity||'').toLowerCase()));
+        if(!severe.length)return;
+        bannerInner.innerHTML=severe.map(f=>{
+          const p=f.properties;
+          const headline=p.headline||p.event;
+          return`<div class="severe-badge"><i class="fa-solid fa-triangle-exclamation"></i>${esc(headline)}</div>`;
+        }).join('');
+        banner.style.display='block';
       }catch(e){}
     }
     async function initWeather(){
