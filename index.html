@@ -667,6 +667,81 @@
       </div>
     </div>
 
+    <!-- ═══ CLAUDE CODE & AI NEWS ROW ═══ -->
+    <div class="row g-3 mb-3">
+
+      <!-- Claude Code / Anthropic Feed -->
+      <div class="col-12 col-xl-6">
+        <div class="card-panel" style="border:1px solid rgba(139,92,246,0.25);height:auto;">
+          <div class="section-heading" style="color:#c4b5fd;">
+            <i class="fa-solid fa-robot"></i>
+            Claude Code &amp; Anthropic
+            <span style="font-size:0.62rem;font-weight:700;color:rgba(196,181,253,0.5);background:rgba(139,92,246,0.1);
+                         padding:1px 7px;border-radius:8px;letter-spacing:0.3px;text-transform:none;">RSS</span>
+            <button onclick="fetchAnthropicNews()" title="Refresh"
+              style="margin-left:auto;background:none;border:1px solid rgba(139,92,246,0.25);color:rgba(196,181,253,0.6);
+                     font-size:0.72rem;padding:3px 10px;border-radius:12px;cursor:pointer;
+                     display:flex;align-items:center;gap:5px;font-weight:600;transition:all 0.2s;"
+              onmouseover="this.style.background='rgba(139,92,246,0.1)';this.style.color='#c4b5fd'"
+              onmouseout="this.style.background='none';this.style.color='rgba(196,181,253,0.6)'">
+              <i class="fa-solid fa-rotate-right" style="font-size:0.65rem;"></i> Refresh
+            </button>
+          </div>
+          <div id="anthropicLoading" class="news-state"><i class="fa-solid fa-circle-notch fa-spin"></i> Loading Anthropic feed…</div>
+          <div id="anthropicError" class="news-state error" style="display:none;">
+            <i class="fa-solid fa-triangle-exclamation"></i> Unable to load feed.
+            <span onclick="fetchAnthropicNews()" style="cursor:pointer;color:#f87171;text-decoration:underline;margin-left:4px;">Retry</span>
+          </div>
+          <div id="anthropicGrid" class="news-grid" style="display:none;"></div>
+          <div id="anthropicLoadMore" class="news-load-more" style="display:none;">
+            <button class="btn-load-more" onclick="showMoreAnthropic()"
+              style="background:rgba(139,92,246,0.1);border-color:rgba(139,92,246,0.28);color:rgba(196,181,253,0.8);">
+              <i class="fa-solid fa-chevron-down"></i> Load More
+            </button>
+          </div>
+          <div class="news-updated" id="anthropicUpdated" style="display:none;">
+            <i class="fa-regular fa-clock" style="font-size:0.62rem;"></i> <span id="anthropicUpdatedText"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI News Feed -->
+      <div class="col-12 col-xl-6">
+        <div class="card-panel" style="border:1px solid rgba(6,182,212,0.25);height:auto;">
+          <div class="section-heading" style="color:#67e8f9;">
+            <i class="fa-solid fa-microchip"></i>
+            AI News
+            <span style="font-size:0.62rem;font-weight:700;color:rgba(103,232,249,0.5);background:rgba(6,182,212,0.1);
+                         padding:1px 7px;border-radius:8px;letter-spacing:0.3px;text-transform:none;">RSS</span>
+            <button onclick="fetchAINews()" title="Refresh"
+              style="margin-left:auto;background:none;border:1px solid rgba(6,182,212,0.25);color:rgba(103,232,249,0.6);
+                     font-size:0.72rem;padding:3px 10px;border-radius:12px;cursor:pointer;
+                     display:flex;align-items:center;gap:5px;font-weight:600;transition:all 0.2s;"
+              onmouseover="this.style.background='rgba(6,182,212,0.1)';this.style.color='#67e8f9'"
+              onmouseout="this.style.background='none';this.style.color='rgba(103,232,249,0.6)'">
+              <i class="fa-solid fa-rotate-right" style="font-size:0.65rem;"></i> Refresh
+            </button>
+          </div>
+          <div id="aiNewsLoading" class="news-state"><i class="fa-solid fa-circle-notch fa-spin"></i> Loading AI news feed…</div>
+          <div id="aiNewsError" class="news-state error" style="display:none;">
+            <i class="fa-solid fa-triangle-exclamation"></i> Unable to load feed.
+            <span onclick="fetchAINews()" style="cursor:pointer;color:#f87171;text-decoration:underline;margin-left:4px;">Retry</span>
+          </div>
+          <div id="aiNewsGrid" class="news-grid" style="display:none;"></div>
+          <div id="aiNewsLoadMore" class="news-load-more" style="display:none;">
+            <button class="btn-load-more" onclick="showMoreAINews()"
+              style="background:rgba(6,182,212,0.1);border-color:rgba(6,182,212,0.28);color:rgba(103,232,249,0.8);">
+              <i class="fa-solid fa-chevron-down"></i> Load More
+            </button>
+          </div>
+          <div class="news-updated" id="aiNewsUpdated" style="display:none;">
+            <i class="fa-regular fa-clock" style="font-size:0.62rem;"></i> <span id="aiNewsUpdatedText"></span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
   </div>
 
   <!-- TOAST -->
@@ -1297,6 +1372,98 @@
       document.getElementById('newsUpdatedText').textContent=`Updated ${new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})} · ${allNewsItems.length} articles`;
       document.getElementById('newsUpdated').style.display='flex';
     }
+    // ═════════════════════════════════════════════
+    //  ANTHROPIC / CLAUDE CODE RSS
+    // ═════════════════════════════════════════════
+    const ANTHROPIC_RSS = 'https://www.anthropic.com/rss.xml';
+    let allAnthropicItems = [], visibleAnthropic = 6;
+
+    function renderFeedGrid(items, gridId, loadMoreId, accentColor, visibleCount) {
+      const grid = document.getElementById(gridId);
+      grid.innerHTML = '';
+      items.slice(0, visibleCount).forEach(it => {
+        const a = document.createElement('a');
+        a.className = 'news-card'; a.href = it.link; a.target = '_blank'; a.rel = 'noopener';
+        a.style.borderColor = `rgba(${accentColor},0.12)`;
+        a.innerHTML = `
+          ${it.imgUrl ? `<img class="news-thumb" src="${esc(it.imgUrl)}" alt="" loading="lazy" onerror="this.style.display='none'">` : ''}
+          <div class="news-body">
+            ${it.category ? `<div class="news-cat" style="color:inherit;">${esc(it.category)}</div>` : ''}
+            <div class="news-headline">${esc(it.title)}</div>
+            ${it.excerpt ? `<div class="news-excerpt">${esc(it.excerpt)}</div>` : ''}
+            <div class="news-footer">
+              <span class="news-author">${esc(it.author)}</span>
+              <span class="news-time">${fmtNewsDate(it.pubDate)}</span>
+            </div>
+          </div>`;
+        grid.appendChild(a);
+      });
+      grid.style.display = 'grid';
+      document.getElementById(loadMoreId).style.display = items.length > visibleCount ? 'flex' : 'none';
+    }
+
+    async function fetchFeedViaProxy(rssUrl) {
+      const proxies = [
+        'https://api.allorigins.win/raw?url=' + encodeURIComponent(rssUrl),
+        'https://corsproxy.io/?' + rssUrl,
+        'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(rssUrl)
+      ];
+      return Promise.any(proxies.map(async u => {
+        const r = await fetch(u, { signal: AbortSignal.timeout(8000) });
+        const t = await r.text();
+        if (!t.includes('<rss') && !t.includes('<channel') && !t.includes('<feed')) throw new Error('not rss');
+        return t;
+      }));
+    }
+
+    async function fetchAnthropicNews() {
+      document.getElementById('anthropicLoading').style.display = 'flex';
+      document.getElementById('anthropicGrid').style.display = 'none';
+      document.getElementById('anthropicError').style.display = 'none';
+      document.getElementById('anthropicLoadMore').style.display = 'none';
+      document.getElementById('anthropicUpdated').style.display = 'none';
+      let text = null;
+      try { text = await fetchFeedViaProxy(ANTHROPIC_RSS); } catch {}
+      document.getElementById('anthropicLoading').style.display = 'none';
+      if (!text) { document.getElementById('anthropicError').style.display = 'flex'; return; }
+      allAnthropicItems = parseRssFeed(text); visibleAnthropic = 6;
+      if (!allAnthropicItems.length) { document.getElementById('anthropicError').style.display = 'flex'; return; }
+      renderFeedGrid(allAnthropicItems, 'anthropicGrid', 'anthropicLoadMore', '139,92,246', visibleAnthropic);
+      document.getElementById('anthropicUpdatedText').textContent = `Updated ${new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})} · ${allAnthropicItems.length} articles`;
+      document.getElementById('anthropicUpdated').style.display = 'flex';
+    }
+    function showMoreAnthropic() {
+      visibleAnthropic += 6;
+      renderFeedGrid(allAnthropicItems, 'anthropicGrid', 'anthropicLoadMore', '139,92,246', visibleAnthropic);
+    }
+
+    // ═════════════════════════════════════════════
+    //  AI NEWS RSS  (The Verge AI)
+    // ═════════════════════════════════════════════
+    const AI_NEWS_RSS = 'https://www.theverge.com/rss/ai-artificial-intelligence/index.xml';
+    let allAINewsItems = [], visibleAINews = 6;
+
+    async function fetchAINews() {
+      document.getElementById('aiNewsLoading').style.display = 'flex';
+      document.getElementById('aiNewsGrid').style.display = 'none';
+      document.getElementById('aiNewsError').style.display = 'none';
+      document.getElementById('aiNewsLoadMore').style.display = 'none';
+      document.getElementById('aiNewsUpdated').style.display = 'none';
+      let text = null;
+      try { text = await fetchFeedViaProxy(AI_NEWS_RSS); } catch {}
+      document.getElementById('aiNewsLoading').style.display = 'none';
+      if (!text) { document.getElementById('aiNewsError').style.display = 'flex'; return; }
+      allAINewsItems = parseRssFeed(text); visibleAINews = 6;
+      if (!allAINewsItems.length) { document.getElementById('aiNewsError').style.display = 'flex'; return; }
+      renderFeedGrid(allAINewsItems, 'aiNewsGrid', 'aiNewsLoadMore', '6,182,212', visibleAINews);
+      document.getElementById('aiNewsUpdatedText').textContent = `Updated ${new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})} · ${allAINewsItems.length} articles`;
+      document.getElementById('aiNewsUpdated').style.display = 'flex';
+    }
+    function showMoreAINews() {
+      visibleAINews += 6;
+      renderFeedGrid(allAINewsItems, 'aiNewsGrid', 'aiNewsLoadMore', '6,182,212', visibleAINews);
+    }
+
     // ─────────────────────────────────────────────
     //  SPOTIFY PODCASTS
     // ─────────────────────────────────────────────
@@ -1437,6 +1604,12 @@
 
 fetchNews();
     setInterval(fetchNews, 20*60*1000);
+
+    fetchAnthropicNews();
+    setInterval(fetchAnthropicNews, 20*60*1000);
+
+    fetchAINews();
+    setInterval(fetchAINews, 20*60*1000);
 
     // ─────────────────────────────────────────────
     //  READ ALOUD
