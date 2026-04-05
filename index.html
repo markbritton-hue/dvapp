@@ -675,7 +675,7 @@
         <div class="card-panel" style="border:1px solid rgba(139,92,246,0.25);height:auto;">
           <div class="section-heading" style="color:#c4b5fd;">
             <i class="fa-solid fa-robot"></i>
-            Claude Code &amp; Anthropic
+            AI Tools &amp; Research
             <span style="font-size:0.62rem;font-weight:700;color:rgba(196,181,253,0.5);background:rgba(139,92,246,0.1);
                          padding:1px 7px;border-radius:8px;letter-spacing:0.3px;text-transform:none;">RSS</span>
             <button onclick="fetchAnthropicNews()" title="Refresh"
@@ -687,7 +687,7 @@
               <i class="fa-solid fa-rotate-right" style="font-size:0.65rem;"></i> Refresh
             </button>
           </div>
-          <div id="anthropicLoading" class="news-state"><i class="fa-solid fa-circle-notch fa-spin"></i> Loading Anthropic feed…</div>
+          <div id="anthropicLoading" class="news-state"><i class="fa-solid fa-circle-notch fa-spin"></i> Loading Wired AI feed…</div>
           <div id="anthropicError" class="news-state error" style="display:none;">
             <i class="fa-solid fa-triangle-exclamation"></i> Unable to load feed.
             <span onclick="fetchAnthropicNews()" style="cursor:pointer;color:#f87171;text-decoration:underline;margin-left:4px;">Retry</span>
@@ -1315,15 +1315,26 @@
       const desc=rssText(item,'description');if(desc.includes('<img')){const m=desc.match(/<img[^>]+src=["']([^"']+)["']/i);if(m)return m[1];}
       return '';
     }
-    function parseRssFeed(xmlText){
+    function parseRssFeed(xmlText, defaultAuthor){
       const doc=new DOMParser().parseFromString(xmlText,'text/xml');
       const results=[];
-      doc.querySelectorAll('item').forEach(item=>{
+      // Support both RSS <item> and Atom <entry>
+      const nodes=[...doc.querySelectorAll('item'),...doc.querySelectorAll('entry')];
+      nodes.forEach(item=>{
         const title=rssText(item,'title'); if(!title)return;
-        let link='';const linkEl=item.getElementsByTagName('link')[0];if(linkEl)link=linkEl.textContent.trim()||linkEl.getAttribute('href')||'';
-        const excerpt=stripHtml(rssText(item,'description')).replace(/\s+/g,' ').trim().slice(0,200);
-        const pubDate=rssText(item,'pubDate','published','updated');
-        const author=rssText(item,'dc:creator','creator','author')||'Daily Wire';
+        // Atom <link> uses href attr; RSS <link> uses text content
+        let link='';
+        const linkEls=item.getElementsByTagName('link');
+        for(const l of linkEls){
+          const href=l.getAttribute('href')||l.textContent.trim();
+          if(href&&href.startsWith('http')){link=href;break;}
+        }
+        const excerpt=stripHtml(rssText(item,'description','summary','content')).replace(/\s+/g,' ').trim().slice(0,200);
+        const pubDate=rssText(item,'pubDate','published','updated','dc:date');
+        // Atom author is nested <author><name>
+        let author=rssText(item,'dc:creator','creator')||'';
+        if(!author){const an=item.querySelector('author name');if(an)author=an.textContent.trim();}
+        if(!author)author=defaultAuthor||'';
         const category=rssText(item,'category');
         results.push({title,link,excerpt,pubDate,author,category,imgUrl:rssImage(item)});
       });
@@ -1366,7 +1377,7 @@
       }catch{}
       document.getElementById('newsLoading').style.display='none';
       if(!text){document.getElementById('newsError').style.display='flex';return;}
-      allNewsItems=parseRssFeed(text); visibleNews=9;
+      allNewsItems=parseRssFeed(text,'Daily Wire'); visibleNews=9;
       if(!allNewsItems.length){document.getElementById('newsError').style.display='flex';return;}
       renderNewsGrid(allNewsItems);
       document.getElementById('newsUpdatedText').textContent=`Updated ${new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})} · ${allNewsItems.length} articles`;
@@ -1375,7 +1386,7 @@
     // ═════════════════════════════════════════════
     //  ANTHROPIC / CLAUDE CODE RSS
     // ═════════════════════════════════════════════
-    const ANTHROPIC_RSS = 'https://www.anthropic.com/rss.xml';
+    const ANTHROPIC_RSS = 'https://www.wired.com/feed/tag/ai/latest/rss';
     let allAnthropicItems = [], visibleAnthropic = 6;
 
     function renderFeedGrid(items, gridId, loadMoreId, accentColor, visibleCount) {
@@ -1426,7 +1437,7 @@
       try { text = await fetchFeedViaProxy(ANTHROPIC_RSS); } catch {}
       document.getElementById('anthropicLoading').style.display = 'none';
       if (!text) { document.getElementById('anthropicError').style.display = 'flex'; return; }
-      allAnthropicItems = parseRssFeed(text); visibleAnthropic = 6;
+      allAnthropicItems = parseRssFeed(text,'Wired'); visibleAnthropic = 6;
       if (!allAnthropicItems.length) { document.getElementById('anthropicError').style.display = 'flex'; return; }
       renderFeedGrid(allAnthropicItems, 'anthropicGrid', 'anthropicLoadMore', '139,92,246', visibleAnthropic);
       document.getElementById('anthropicUpdatedText').textContent = `Updated ${new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})} · ${allAnthropicItems.length} articles`;
@@ -1453,7 +1464,7 @@
       try { text = await fetchFeedViaProxy(AI_NEWS_RSS); } catch {}
       document.getElementById('aiNewsLoading').style.display = 'none';
       if (!text) { document.getElementById('aiNewsError').style.display = 'flex'; return; }
-      allAINewsItems = parseRssFeed(text); visibleAINews = 6;
+      allAINewsItems = parseRssFeed(text,'The Verge'); visibleAINews = 6;
       if (!allAINewsItems.length) { document.getElementById('aiNewsError').style.display = 'flex'; return; }
       renderFeedGrid(allAINewsItems, 'aiNewsGrid', 'aiNewsLoadMore', '6,182,212', visibleAINews);
       document.getElementById('aiNewsUpdatedText').textContent = `Updated ${new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})} · ${allAINewsItems.length} articles`;
