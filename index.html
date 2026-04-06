@@ -674,8 +674,8 @@
       <div class="col-12 col-xl-6">
         <div class="card-panel" style="border:1px solid rgba(139,92,246,0.25);height:auto;">
           <div class="section-heading" style="color:#c4b5fd;">
-            <i class="fa-solid fa-robot"></i>
-            AI Tools &amp; Research
+            <i class="fa-solid fa-microchip-ai"></i>
+            Engadget Tech
             <span style="font-size:0.62rem;font-weight:700;color:rgba(196,181,253,0.5);background:rgba(139,92,246,0.1);
                          padding:1px 7px;border-radius:8px;letter-spacing:0.3px;text-transform:none;">RSS</span>
             <button onclick="fetchAnthropicNews()" title="Refresh"
@@ -687,7 +687,7 @@
               <i class="fa-solid fa-rotate-right" style="font-size:0.65rem;"></i> Refresh
             </button>
           </div>
-          <div id="anthropicLoading" class="news-state"><i class="fa-solid fa-circle-notch fa-spin"></i> Loading Wired AI feed…</div>
+          <div id="anthropicLoading" class="news-state"><i class="fa-solid fa-circle-notch fa-spin"></i> Loading Engadget feed…</div>
           <div id="anthropicError" class="news-state error" style="display:none;">
             <i class="fa-solid fa-triangle-exclamation"></i> Unable to load feed.
             <span onclick="fetchAnthropicNews()" style="cursor:pointer;color:#f87171;text-decoration:underline;margin-left:4px;">Retry</span>
@@ -1318,11 +1318,13 @@
     function parseRssFeed(xmlText, defaultAuthor){
       const doc=new DOMParser().parseFromString(xmlText,'text/xml');
       const results=[];
-      // Support both RSS <item> and Atom <entry>
-      const nodes=[...doc.querySelectorAll('item'),...doc.querySelectorAll('entry')];
+      // Use getElementsByTagName (namespace-safe) for both RSS <item> and Atom <entry>
+      const items=doc.getElementsByTagName('item');
+      const entries=doc.getElementsByTagName('entry');
+      const nodes=[...items,...entries];
       nodes.forEach(item=>{
         const title=rssText(item,'title'); if(!title)return;
-        // Atom <link> uses href attr; RSS <link> uses text content
+        // Atom <link rel="alternate" href="...">; RSS <link> text content
         let link='';
         const linkEls=item.getElementsByTagName('link');
         for(const l of linkEls){
@@ -1331,9 +1333,12 @@
         }
         const excerpt=stripHtml(rssText(item,'description','summary','content')).replace(/\s+/g,' ').trim().slice(0,200);
         const pubDate=rssText(item,'pubDate','published','updated','dc:date');
-        // Atom author is nested <author><name>
+        // Atom author: nested <author><name>
         let author=rssText(item,'dc:creator','creator')||'';
-        if(!author){const an=item.querySelector('author name');if(an)author=an.textContent.trim();}
+        if(!author){
+          const authorEl=item.getElementsByTagName('author')[0];
+          if(authorEl){const nameEl=authorEl.getElementsByTagName('name')[0];if(nameEl)author=nameEl.textContent.trim();}
+        }
         if(!author)author=defaultAuthor||'';
         const category=rssText(item,'category');
         results.push({title,link,excerpt,pubDate,author,category,imgUrl:rssImage(item)});
@@ -1386,7 +1391,7 @@
     // ═════════════════════════════════════════════
     //  ANTHROPIC / CLAUDE CODE RSS
     // ═════════════════════════════════════════════
-    const ANTHROPIC_RSS = 'https://www.wired.com/feed/tag/ai/latest/rss';
+    const ANTHROPIC_RSS = 'https://www.engadget.com/rss.xml';
     let allAnthropicItems = [], visibleAnthropic = 6;
 
     function renderFeedGrid(items, gridId, loadMoreId, accentColor, visibleCount) {
@@ -1437,7 +1442,7 @@
       try { text = await fetchFeedViaProxy(ANTHROPIC_RSS); } catch {}
       document.getElementById('anthropicLoading').style.display = 'none';
       if (!text) { document.getElementById('anthropicError').style.display = 'flex'; return; }
-      allAnthropicItems = parseRssFeed(text,'Wired'); visibleAnthropic = 6;
+      allAnthropicItems = parseRssFeed(text,'Engadget'); visibleAnthropic = 6;
       if (!allAnthropicItems.length) { document.getElementById('anthropicError').style.display = 'flex'; return; }
       renderFeedGrid(allAnthropicItems, 'anthropicGrid', 'anthropicLoadMore', '139,92,246', visibleAnthropic);
       document.getElementById('anthropicUpdatedText').textContent = `Updated ${new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})} · ${allAnthropicItems.length} articles`;
