@@ -1259,13 +1259,19 @@
         }
       }
 
+      const savedScrollY = window.scrollY;
       container.innerHTML = html;
 
-      // Scroll "now" line into view if viewing today
+      // Scroll "now" line into view within the schedule panel, not the page
       if (isToday) {
         const nl = container.querySelector('.now-line');
-        if (nl) nl.scrollIntoView({ block:'center', behavior:'smooth' });
+        if (nl) {
+          const containerTop = container.getBoundingClientRect().top + container.scrollTop;
+          const nlTop = nl.getBoundingClientRect().top - container.getBoundingClientRect().top + container.scrollTop;
+          container.scrollTop = nlTop - container.clientHeight / 2;
+        }
       }
+      window.scrollTo({ top: savedScrollY, behavior: 'instant' });
     }
 
     function nowLine() {
