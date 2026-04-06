@@ -1409,7 +1409,7 @@
             ${it.excerpt ? `<div class="news-excerpt">${esc(it.excerpt)}</div>` : ''}
             <div class="news-footer">
               <span class="news-author">${esc(it.author)}</span>
-              <span class="news-time">${fmtNewsDate(it.pubDate)}</span>
+              <span class="news-time">${relTime(it.pubDate)}</span>
             </div>
           </div>`;
         grid.appendChild(a);
